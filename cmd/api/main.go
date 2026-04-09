@@ -1,8 +1,8 @@
 package main
 
 import (
-	"authservice/internal/infra/config"
-	database "authservice/internal/infra/db"
+	"authservice/internal/config"
+	databse "authservice/internal/database"
 	"context"
 	"log"
 	"log/slog"
@@ -22,7 +22,7 @@ func main() {
 
 	ctx := context.Background()
 	startedAt := time.Now().UTC()
-	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
+	pool, err := databse.NewPool(ctx, cfg.DatabaseURL)
 	if err != nil {
 		logger.Error("database connection failed", "error", err)
 		os.Exit(1)

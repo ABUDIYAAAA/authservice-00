@@ -31,7 +31,7 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
-	router.Use(corsMiddleware(cfg.AllowedOrigins))
+	router.Use(corsMiddleware())
 	router.SetTrustedProxies(nil)
 
 	router.GET("/health", func(c *gin.Context) {

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"authservice/internal/config"
-	"authservice/internal/database"
+	"authservice/internal/infra/config"
+	database "authservice/internal/infra/db"
 	"context"
 	"log"
 	"log/slog"

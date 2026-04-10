@@ -1,38 +1,89 @@
 package main
 
 import (
+	"authservice/docs"
+	"authservice/internal/audit"
+	"authservice/internal/auth"
 	"authservice/internal/config"
-	databse "authservice/internal/database"
+	"authservice/internal/database"
+	"authservice/internal/middleware"
+	"authservice/internal/user"
 	"context"
 	"log"
-	"log/slog"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"golang.org/x/time/rate"
 )
 
+// @title AuthService API
+// @version 1.0.0
+// @description Multi-tenant SSO service.
+// @BasePath /
+// @schemes http https
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description Bearer access token.
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal("load config: ", err)
 	}
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+
+	logger, err := newLogger(cfg.Environment)
+	if err != nil {
+		log.Fatal("init logger: ", err)
+	}
+	defer logger.Sync()
 
 	ctx := context.Background()
 	startedAt := time.Now().UTC()
-	pool, err := databse.NewPool(ctx, cfg.DatabaseURL)
+	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
 	if err != nil {
-		logger.Error("database connection failed", "error", err)
-		os.Exit(1)
+		logger.Fatal("database connection failed", zap.Error(err))
 	}
 	defer pool.Close()
 
+	auditRepo := audit.NewRepository(pool)
+	auditService := audit.NewService(auditRepo, logger)
+	authRepo := auth.NewRepository(pool)
+	userRepo := user.NewRepository(pool)
+	tokenManager := auth.NewTokenManager(
+		cfg.JWTSecret,
+		time.Duration(cfg.AccessTokenTTLMinutes)*time.Minute,
+		time.Duration(cfg.RefreshTokenTTLDays)*24*time.Hour,
+	)
+
+	authService := auth.NewService(authRepo, auditService, tokenManager, logger)
+	userService := user.NewUserService(userRepo, auditService, logger)
+
+	authHandler := auth.NewHandler(authService, logger)
+	userHandler := user.NewHandler(userService, logger)
+
+	publicLimiter := middleware.NewIPRateLimiter(rate.Limit(cfg.AuthPublicRPS), cfg.AuthPublicBurst, 10*time.Minute)
+	privateLimiter := middleware.NewIPRateLimiter(rate.Limit(cfg.AuthPrivateRPS), cfg.AuthPrivateBurst, 10*time.Minute)
+	adminLimiter := middleware.NewIPRateLimiter(rate.Limit(cfg.AdminRPS), cfg.AdminBurst, 15*time.Minute)
+
 	router := gin.New()
-	router.Use(gin.Logger(), gin.Recovery())
+	router.Use(gin.Recovery())
+	router.Use(middleware.RequestID(), middleware.ZapRequestLogger(logger))
 	router.Use(corsMiddleware())
 	router.SetTrustedProxies(nil)
+
+	docs.SwaggerInfo.Title = "AuthService API"
+	docs.SwaggerInfo.Description = "Multi-tenant SSO service with platform super-admin and org-admin control."
+	docs.SwaggerInfo.Version = "1.0.0"
+	docs.SwaggerInfo.BasePath = "/"
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	auth.RegisterRoutes(router, authHandler, publicLimiter.Middleware(), privateLimiter.Middleware())
+	user.RegisterRoutes(router, userHandler, authHandler.AuthMiddleware(), adminLimiter.Middleware())
 
 	router.GET("/health", func(c *gin.Context) {
 		dbCtx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
@@ -75,11 +126,27 @@ func main() {
 		})
 	})
 
-	logger.Info("starting server", "port", cfg.Port, "env", cfg.Environment)
+	logger.Info("starting server",
+		zap.String("port", cfg.Port),
+		zap.String("env", cfg.Environment),
+	)
 	if err := router.Run(":" + cfg.Port); err != nil {
-		logger.Error("server stopped", "error", err)
-		os.Exit(1)
+		logger.Fatal("server stopped", zap.Error(err))
 	}
+}
+
+func newLogger(env string) (*zap.Logger, error) {
+	if env == "production" {
+		cfg := zap.NewProductionConfig()
+		cfg.EncoderConfig.TimeKey = "ts"
+		cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		return cfg.Build()
+	}
+
+	cfg := zap.NewDevelopmentConfig()
+	cfg.EncoderConfig.TimeKey = "ts"
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	return cfg.Build()
 }
 
 func errorString(err error) any {

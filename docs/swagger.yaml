@@ -1,4 +1,596 @@
+basePath: /
+definitions:
+  auth.AuthUser:
+    properties:
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      id:
+        type: string
+      last_login_at:
+        type: string
+      name:
+        type: string
+    type: object
+  auth.ErrorResponse:
+    properties:
+      error:
+        example: invalid credentials
+        type: string
+    type: object
+  auth.LoginRequest:
+    properties:
+      email:
+        example: admin@example.com
+        type: string
+      org_id:
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        type: string
+      password:
+        example: StrongPassword123!
+        minLength: 8
+        type: string
+      service_id:
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d470
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  auth.LogoutRequest:
+    properties:
+      service_id:
+        type: string
+    type: object
+  auth.MeResponse:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      org_id:
+        type: string
+      session_id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  auth.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  auth.TokenResponse:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: string
+      refresh_token:
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+      user:
+        $ref: '#/definitions/auth.AuthUser'
+    type: object
+  user.AssignOrgAdminRequest:
+    properties:
+      user_id:
+        type: string
+    required:
+    - user_id
+    type: object
+  user.CreateOrganizationRequest:
+    properties:
+      name:
+        example: Acme Corp
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  user.CreateServiceRequest:
+    properties:
+      name:
+        example: billing-service
+        minLength: 2
+        type: string
+      redirect_uris:
+        example:
+        - https://app.acme.com/callback
+        items:
+          type: string
+        type: array
+    required:
+    - name
+    type: object
+  user.ErrorResponse:
+    properties:
+      error:
+        example: forbidden
+        type: string
+    type: object
+  user.OrgUserResponse:
+    properties:
+      email:
+        type: string
+      joined_at:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+      user_id:
+        type: string
+    type: object
+  user.OrganizationResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  user.ServiceResponse:
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+    type: object
+  user.UpsertOrgMembershipRequest:
+    properties:
+      role:
+        example: MEMBER
+        type: string
+      user_id:
+        type: string
+    required:
+    - role
+    - user_id
+    type: object
 info:
   contact: {}
-paths: {}
+  description: Multi-tenant SSO service.
+  title: AuthService API
+  version: 1.0.0
+paths:
+  /admin/org/{orgID}/services:
+    get:
+      description: Org admins can list OAuth client services in their org.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/user.ServiceResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: List services in organization (org admin)
+      tags:
+      - admin-org
+      - organizations
+    post:
+      consumes:
+      - application/json
+      description: Org admins can register services (OAuth clients) in their org.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Service payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreateServiceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/user.ServiceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Create service in organization (org admin)
+      tags:
+      - admin-org
+      - organizations
+  /admin/org/{orgID}/users:
+    get:
+      description: Org admins can list users in their organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/user.OrgUserResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: List organization users (org admin)
+      tags:
+      - admin-org
+      - users
+  /admin/org/{orgID}/users/memberships:
+    post:
+      consumes:
+      - application/json
+      description: Org admins can assign/update ADMIN or MEMBER role for users in
+        their org.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Membership update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpsertOrgMembershipRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Upsert organization membership (org admin)
+      tags:
+      - admin-org
+      - users
+  /admin/super/organizations:
+    get:
+      description: Super admins can list all organizations.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/user.OrganizationResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: List organizations (super admin)
+      tags:
+      - admin-super
+      - organizations
+    post:
+      consumes:
+      - application/json
+      description: Super admins can create organizations.
+      parameters:
+      - description: Create organization
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/user.OrganizationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Create organization (super admin)
+      tags:
+      - admin-super
+      - organizations
+  /admin/super/organizations/{orgID}/admins:
+    post:
+      consumes:
+      - application/json
+      description: Super admins can assign an org admin membership.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Assign org admin
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.AssignOrgAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Assign org admin (super admin)
+      tags:
+      - admin-super
+      - organizations
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user and issues access/refresh tokens.
+      parameters:
+      - description: Login payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: Login user
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revokes session and blacklists the active access token jti.
+      parameters:
+      - description: Optional service scoped logout
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/auth.LogoutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Logout user
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: Returns identity and session info for the active access token.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.MeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Get current user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Rotates refresh token and returns a new token pair.
+      parameters:
+      - description: Refresh payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - auth
+schemes:
+- http
+- https
+securityDefinitions:
+  Bearer:
+    description: Bearer access token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

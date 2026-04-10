@@ -2,10 +2,11 @@ package auth
 
 import "github.com/gin-gonic/gin"
 
-func RegisterRoutes(router *gin.Engine, h *Handler, publicLimiter gin.HandlerFunc, privateLimiter gin.HandlerFunc) {
+func RegisterRoutes(router *gin.Engine, h *Handler, csrfTokenHandler gin.HandlerFunc, publicLimiter gin.HandlerFunc, privateLimiter gin.HandlerFunc) {
 	public := router.Group("/auth")
 	public.Use(publicLimiter)
 	{
+		public.GET("/csrf", csrfTokenHandler)
 		public.POST("/login", h.Login)
 		public.POST("/refresh", h.Refresh)
 	}

@@ -13,6 +13,7 @@ type Config struct {
 	Port                  string
 	DatabaseURL           string
 	AllowedOrigins        []string
+	CSRFTrustedOrigins    []string
 	JWTSecret             string
 	AccessTokenTTLMinutes int
 	RefreshTokenTTLDays   int
@@ -22,15 +23,31 @@ type Config struct {
 	AuthPrivateBurst      int
 	AdminRPS              float64
 	AdminBurst            int
+	CSRFCookieName        string
+	CSRFCookieDomain      string
+	CSRFCookiePath        string
+	CSRFCookieSecure      bool
+	CSRFCookieHTTPOnly    bool
+	CSRFCookieSameSite    string
+	CSRFCookieMaxAgeSec   int
+	CSRFHeaderName        string
 }
 
 func Load() (*Config, error) {
 	_ = godotenv.Load(".env", "../.env")
+	env := getString("APP_ENV", "development")
+	allowedOrigins := splitCSV(os.Getenv("ALLOWED_ORIGINS"))
+	csrfTrustedOrigins := splitCSV(os.Getenv("CSRF_TRUSTED_ORIGINS"))
+	if len(csrfTrustedOrigins) == 0 {
+		csrfTrustedOrigins = allowedOrigins
+	}
+
 	cfg := &Config{
-		Environment:           getString("APP_ENV", "development"),
+		Environment:           env,
 		Port:                  getString("PORT", "8080"),
 		DatabaseURL:           os.Getenv("DATABASE_URL"),
-		AllowedOrigins:        splitCSV(os.Getenv("ALLOWED_ORIGINS")),
+		AllowedOrigins:        allowedOrigins,
+		CSRFTrustedOrigins:    csrfTrustedOrigins,
 		JWTSecret:             getString("JWT_SECRET", "dev-secret-change-me"),
 		AccessTokenTTLMinutes: getInt("ACCESS_TOKEN_TTL_MINUTES", 15),
 		RefreshTokenTTLDays:   getInt("REFRESH_TOKEN_TTL_DAYS", 30),
@@ -40,6 +57,14 @@ func Load() (*Config, error) {
 		AuthPrivateBurst:      getInt("RATE_LIMIT_AUTH_PRIVATE_BURST", 20),
 		AdminRPS:              getFloat("RATE_LIMIT_ADMIN_RPS", 2),
 		AdminBurst:            getInt("RATE_LIMIT_ADMIN_BURST", 4),
+		CSRFCookieName:        getString("CSRF_COOKIE_NAME", "csrftoken"),
+		CSRFCookieDomain:      strings.TrimSpace(os.Getenv("CSRF_COOKIE_DOMAIN")),
+		CSRFCookiePath:        getString("CSRF_COOKIE_PATH", "/"),
+		CSRFCookieSecure:      getBool("CSRF_COOKIE_SECURE", env == "production"),
+		CSRFCookieHTTPOnly:    getBool("CSRF_COOKIE_HTTPONLY", false),
+		CSRFCookieSameSite:    getString("CSRF_COOKIE_SAMESITE", "Lax"),
+		CSRFCookieMaxAgeSec:   getInt("CSRF_COOKIE_MAX_AGE_SECONDS", 31536000),
+		CSRFHeaderName:        getString("CSRF_HEADER_NAME", "X-CSRF-Token"),
 	}
 
 	return cfg, nil
@@ -90,4 +115,18 @@ func getFloat(key string, defaultValue float64) float64 {
 		return defaultValue
 	}
 	return n
+}
+
+func getBool(key string, defaultValue bool) bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+	if v == "" {
+		return defaultValue
+	}
+	if v == "1" || v == "true" || v == "yes" || v == "on" {
+		return true
+	}
+	if v == "0" || v == "false" || v == "no" || v == "off" {
+		return false
+	}
+	return defaultValue
 }

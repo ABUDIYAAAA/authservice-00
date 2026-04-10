@@ -5,6 +5,7 @@ import (
 	"authservice/internal/audit"
 	"authservice/internal/auth"
 	"authservice/internal/config"
+	"authservice/internal/csrf"
 	"authservice/internal/database"
 	"authservice/internal/middleware"
 	"authservice/internal/user"
@@ -65,6 +66,23 @@ func main() {
 
 	authHandler := auth.NewHandler(authService, logger)
 	userHandler := user.NewHandler(userService, logger)
+	csrfService := csrf.NewService(csrf.ServiceConfig{
+		Cookie: csrf.CookieConfig{
+			Name:          cfg.CSRFCookieName,
+			Domain:        cfg.CSRFCookieDomain,
+			Path:          cfg.CSRFCookiePath,
+			Secure:        cfg.CSRFCookieSecure,
+			HTTPOnly:      cfg.CSRFCookieHTTPOnly,
+			SameSite:      csrf.ParseSameSite(cfg.CSRFCookieSameSite),
+			MaxAgeSeconds: cfg.CSRFCookieMaxAgeSec,
+		},
+	})
+	csrfHandler := csrf.NewHandler(csrfService)
+	csrfMiddleware := csrf.NewMiddleware(csrfService, csrf.MiddlewareConfig{
+		TrustedOrigins: cfg.CSRFTrustedOrigins,
+		HeaderNames:    []string{cfg.CSRFHeaderName, "X-CSRFToken"},
+		FormFieldName:  "csrfmiddlewaretoken",
+	})
 
 	publicLimiter := middleware.NewIPRateLimiter(rate.Limit(cfg.AuthPublicRPS), cfg.AuthPublicBurst, 10*time.Minute)
 	privateLimiter := middleware.NewIPRateLimiter(rate.Limit(cfg.AuthPrivateRPS), cfg.AuthPrivateBurst, 10*time.Minute)
@@ -74,6 +92,7 @@ func main() {
 	router.Use(gin.Recovery())
 	router.Use(middleware.RequestID(), middleware.ZapRequestLogger(logger))
 	router.Use(corsMiddleware())
+	router.Use(csrfMiddleware.Handler())
 	router.SetTrustedProxies(nil)
 
 	docs.SwaggerInfo.Title = "AuthService API"
@@ -82,7 +101,7 @@ func main() {
 	docs.SwaggerInfo.BasePath = "/"
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	auth.RegisterRoutes(router, authHandler, publicLimiter.Middleware(), privateLimiter.Middleware())
+	auth.RegisterRoutes(router, authHandler, csrfHandler.GetToken, publicLimiter.Middleware(), privateLimiter.Middleware())
 	user.RegisterRoutes(router, userHandler, authHandler.AuthMiddleware(), adminLimiter.Middleware())
 
 	router.GET("/health", func(c *gin.Context) {

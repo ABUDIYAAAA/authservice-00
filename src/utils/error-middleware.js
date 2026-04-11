@@ -2,8 +2,29 @@ import { ZodError } from "zod";
 import logger from "../core/logger/logger.js";
 import { AppError } from "./errors.js";
 
+const isInvalidJsonError = (err) => {
+  return (
+    err?.type === "entity.parse.failed" ||
+    (err instanceof SyntaxError && err?.status === 400 && "body" in err)
+  );
+};
+
 const errorMiddleware = (err, req, res, _next) => {
-  const requestId = req.id;
+  const requestId = req.id || null;
+
+  if (isInvalidJsonError(err)) {
+    logger.warn("Invalid JSON request body", {
+      requestId,
+      path: req.path,
+      method: req.method,
+    });
+
+    return res.status(400).json({
+      error: "Malformed JSON body",
+      code: "INVALID_JSON_BODY",
+      requestId,
+    });
+  }
 
   if (err instanceof ZodError) {
     return res.status(400).json({

@@ -20,6 +20,10 @@ import {
   QUEUE_NAMES,
 } from "../core/constants/queue.constants.js";
 
+const isMissingTableError = (error) => {
+  return error?.cause?.code === "42P01" || error?.code === "42P01";
+};
+
 const cleanupWorker = new Worker(
   QUEUE_NAMES.CLEANUP,
   async () => {
@@ -43,7 +47,27 @@ const cleanupWorker = new Worker(
 );
 
 cleanupWorker.on("failed", async (job, error) => {
-  logger.error("Cleanup job failed", { jobId: job?.id, error: error.message });
+  const code = error?.cause?.code || error?.code;
+
+  logger.error("Cleanup job failed", {
+    jobId: job?.id,
+    error: error.message,
+    cause: error?.cause?.message,
+    code,
+  });
+
+  if (isMissingTableError(error)) {
+    logger.error(
+      "Worker stopping due to schema drift. Apply latest DB migration.",
+      {
+        missingTable: "organization_invites",
+        requiredAction: "Run db migration before starting worker",
+      },
+    );
+
+    await closeRedisConnection();
+    process.exit(1);
+  }
 
   if (job) {
     await deadLetterQueue.add(QUEUE_JOB_NAMES.CLEANUP_FAILED, {

@@ -25,9 +25,9 @@ import {
 
 const app = express();
 
+app.use(requestContext);
 app.use(express.json());
 app.use(cookieParser());
-app.use(requestContext);
 app.use(morgan("dev"));
 app.use(
   helmet({

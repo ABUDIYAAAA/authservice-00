@@ -40,4 +40,14 @@ export const RATE_LIMIT_POLICY = {
     limit: 30,
     error: "Too many organization invite acceptance requests",
   },
+  ORGANIZATION_CLIENT_MUTATION: {
+    windowMs: 15 * MINUTE_MS,
+    limit: 60,
+    error: "Too many organization client update requests",
+  },
+  ORGANIZATION_CLIENT_PROVIDER_MUTATION: {
+    windowMs: 15 * MINUTE_MS,
+    limit: 80,
+    error: "Too many organization client provider update requests",
+  },
 };

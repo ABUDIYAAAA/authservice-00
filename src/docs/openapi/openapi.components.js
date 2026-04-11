@@ -210,6 +210,79 @@ export const OPENAPI_COMPONENTS = {
         newOwner: { $ref: "#/components/schemas/OrganizationMembership" },
       },
     },
+    OrganizationClientProvider: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        provider: { type: "string", enum: ["google", "github"] },
+        callbackUrl: { type: "string", format: "uri" },
+        isActive: { type: "boolean" },
+        secretConfigured: { type: "boolean" },
+        providerClientId: { type: "string", nullable: true },
+        providerClientSecretSuffix: { type: "string", nullable: true },
+        createdAt: { type: "string", format: "date-time" },
+        updatedAt: { type: "string", format: "date-time" },
+      },
+    },
+    OrganizationClient: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        orgId: { type: "string", format: "uuid" },
+        name: { type: "string" },
+        authorizedOrigins: {
+          type: "array",
+          items: { type: "string", format: "uri" },
+        },
+        createdByUserId: { type: "string", format: "uuid", nullable: true },
+        updatedByUserId: { type: "string", format: "uuid", nullable: true },
+        createdAt: { type: "string", format: "date-time" },
+        updatedAt: { type: "string", format: "date-time" },
+        providers: {
+          type: "array",
+          items: { $ref: "#/components/schemas/OrganizationClientProvider" },
+        },
+      },
+    },
+    CreateOrganizationClientRequest: {
+      type: "object",
+      required: ["name"],
+      properties: {
+        name: { type: "string", minLength: 2, maxLength: 255 },
+        authorizedOrigins: {
+          type: "array",
+          items: { type: "string", format: "uri" },
+          default: [],
+        },
+      },
+    },
+    UpdateOrganizationClientRequest: {
+      type: "object",
+      properties: {
+        name: { type: "string", minLength: 2, maxLength: 255 },
+        authorizedOrigins: {
+          type: "array",
+          items: { type: "string", format: "uri" },
+        },
+      },
+    },
+    CreateOrganizationClientProviderRequest: {
+      type: "object",
+      required: ["provider", "providerClientId", "providerClientSecret"],
+      properties: {
+        provider: { type: "string", enum: ["google", "github"] },
+        providerClientId: { type: "string" },
+        providerClientSecret: { type: "string", minLength: 8 },
+      },
+    },
+    UpdateOrganizationClientProviderRequest: {
+      type: "object",
+      properties: {
+        providerClientId: { type: "string" },
+        providerClientSecret: { type: "string", minLength: 8 },
+        isActive: { type: "boolean" },
+      },
+    },
     OrganizationListResponse: {
       type: "object",
       properties: {

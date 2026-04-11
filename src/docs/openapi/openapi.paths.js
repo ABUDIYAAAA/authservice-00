@@ -570,6 +570,331 @@ export const OPENAPI_PATH_DEFINITIONS = {
       },
     },
   },
+  [OPENAPI_PATHS.ORGANIZATION_CLIENTS]: {
+    get: {
+      summary: "List organization OAuth clients",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonObjectResponse(OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_LIST, {
+          type: "object",
+          properties: {
+            clients: {
+              type: "array",
+              items: { $ref: "#/components/schemas/OrganizationClient" },
+            },
+          },
+        }),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization not found" },
+      },
+    },
+    post: {
+      summary: "Create organization OAuth client",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/CreateOrganizationClientRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        201: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_CREATED,
+          {
+            type: "object",
+            properties: {
+              client: { $ref: "#/components/schemas/OrganizationClient" },
+            },
+          },
+        ),
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization not found" },
+        409: { description: "Client name already exists" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.ORGANIZATION_CLIENT_BY_ID]: {
+    get: {
+      summary: "Get organization OAuth client details",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_DETAILS,
+          {
+            type: "object",
+            properties: {
+              client: { $ref: "#/components/schemas/OrganizationClient" },
+            },
+          },
+        ),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization or client not found" },
+      },
+    },
+    patch: {
+      summary: "Update organization OAuth client",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/UpdateOrganizationClientRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_UPDATED,
+          {
+            type: "object",
+            properties: {
+              client: { $ref: "#/components/schemas/OrganizationClient" },
+            },
+          },
+        ),
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization or client not found" },
+        409: { description: "Client name already exists" },
+      },
+    },
+    delete: {
+      summary: "Delete organization OAuth client",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_DELETED,
+          {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+            },
+          },
+        ),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization or client not found" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.ORGANIZATION_CLIENT_PROVIDERS]: {
+    post: {
+      summary: "Configure provider credentials for organization client",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/CreateOrganizationClientProviderRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        201: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_PROVIDER_ADDED,
+          {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+              provider: {
+                $ref: "#/components/schemas/OrganizationClientProvider",
+              },
+            },
+          },
+        ),
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization or client not found" },
+        409: { description: "Provider is already configured" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.ORGANIZATION_CLIENT_PROVIDER_BY_ID]: {
+    patch: {
+      summary: "Update provider credentials for organization client",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "provider",
+          required: true,
+          schema: { type: "string", enum: ["google", "github"] },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/UpdateOrganizationClientProviderRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_PROVIDER_UPDATED,
+          {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+              provider: {
+                $ref: "#/components/schemas/OrganizationClientProvider",
+              },
+            },
+          },
+        ),
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization, client, or provider not found" },
+      },
+    },
+    delete: {
+      summary: "Remove provider from organization client",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "provider",
+          required: true,
+          schema: { type: "string", enum: ["google", "github"] },
+        },
+      ],
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_PROVIDER_REMOVED,
+          {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+            },
+          },
+        ),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization, client, or provider not found" },
+      },
+    },
+  },
   [OPENAPI_PATHS.ORGANIZATION_INVITE_BY_TOKEN]: {
     get: {
       summary: "Get invite details by token for current user",

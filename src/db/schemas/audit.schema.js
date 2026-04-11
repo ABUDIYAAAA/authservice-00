@@ -8,7 +8,8 @@ import {
   varchar,
   text,
 } from "drizzle-orm/pg-core";
-import { organizations, users } from "./user.schema.js";
+import { organizations } from "./organization.schema.js";
+import { users } from "./user.schema.js";
 import { sessions } from "./session.schema.js";
 
 export const auditLogs = pgTable(

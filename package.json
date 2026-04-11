@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon .",
-    "dev:all": "node scripts/dev-all.js",
+    "dev:all": "node src/scripts/dev-all.js",
     "test": "vitest",
     "docs:generate": "rm -rf src/src && node src/scripts/generate-swagger.js",
     "db:generate": "drizzle-kit generate",

@@ -34,6 +34,14 @@ export const OPENAPI_DESCRIPTIONS = {
   ORGANIZATION_INVITE_REVOKED: "Invite revoked",
   ORGANIZATION_MEMBER_ROLE_UPDATED: "Organization member role updated",
   ORGANIZATION_OWNERSHIP_TRANSFERRED: "Organization ownership transferred",
+  ORGANIZATION_CLIENT_CREATED: "Organization client created",
+  ORGANIZATION_CLIENT_LIST: "Organization clients",
+  ORGANIZATION_CLIENT_DETAILS: "Organization client details",
+  ORGANIZATION_CLIENT_UPDATED: "Organization client updated",
+  ORGANIZATION_CLIENT_DELETED: "Organization client deleted",
+  ORGANIZATION_CLIENT_PROVIDER_ADDED: "Organization client provider configured",
+  ORGANIZATION_CLIENT_PROVIDER_UPDATED: "Organization client provider updated",
+  ORGANIZATION_CLIENT_PROVIDER_REMOVED: "Organization client provider removed",
   OAUTH_REDIRECT: "Sets auth cookies and redirects to frontend",
   OAUTH_PROVIDER_REDIRECT: "Redirect to provider authorization page",
   INVALID_INPUT: "Invalid input",
@@ -64,6 +72,12 @@ export const OPENAPI_PATHS = {
   ORGANIZATION_MEMBER_ROLE: "/api/organizations/{orgId}/members/{userId}/role",
   ORGANIZATION_TRANSFER_OWNERSHIP:
     "/api/organizations/{orgId}/transfer-ownership",
+  ORGANIZATION_CLIENTS: "/api/organizations/{orgId}/clients",
+  ORGANIZATION_CLIENT_BY_ID: "/api/organizations/{orgId}/clients/{clientId}",
+  ORGANIZATION_CLIENT_PROVIDERS:
+    "/api/organizations/{orgId}/clients/{clientId}/providers",
+  ORGANIZATION_CLIENT_PROVIDER_BY_ID:
+    "/api/organizations/{orgId}/clients/{clientId}/providers/{provider}",
   ORGANIZATION_INVITE_BY_TOKEN: "/api/organizations/invites/{token}",
   ORGANIZATION_INVITE_ACCEPT: "/api/organizations/invites/accept",
   OAUTH_GOOGLE: "/api/oauth/google",

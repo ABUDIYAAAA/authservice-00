@@ -20,6 +20,7 @@ import {
   organizationInviteSendLimiter,
   organizationMutationLimiter,
 } from "../../core/ratelimiters/organization.ratelimits.js";
+import clientRoutes from "../client/client.routes.js";
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.post(
   asyncHandler(createOrganizationHandler),
 );
 router.get("/", requireAuth, asyncHandler(listOrganizationsHandler));
+router.use("/:orgId/clients", clientRoutes);
 router.get("/:orgId", requireAuth, asyncHandler(getOrganizationHandler));
 router.patch(
   "/:orgId",

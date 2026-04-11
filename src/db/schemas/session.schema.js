@@ -9,7 +9,8 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { organizations, users } from "./user.schema.js";
+import { organizations } from "./organization.schema.js";
+import { users } from "./user.schema.js";
 
 export const sessions = pgTable(
   "sessions",

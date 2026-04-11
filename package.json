@@ -5,7 +5,13 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon .",
-    "test": "vitest"
+    "test": "vitest",
+    "docs:generate": "rm -rf src/src && node src/scripts/generate-swagger.js",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:drop": "drizzle-kit drop",
+    "worker": "node src/workers/worker.js",
+    "gen:keys": "mkdir -p keys && openssl genpkey -algorithm RSA -out keys/access-private.pem -pkeyopt rsa_keygen_bits:2048 && openssl rsa -pubout -in keys/access-private.pem -out keys/access-public.pem && openssl genpkey -algorithm RSA -out keys/refresh-private.pem -pkeyopt rsa_keygen_bits:2048 && openssl rsa -pubout -in keys/refresh-private.pem -out keys/refresh-public.pem"
   },
   "repository": {
     "type": "git",

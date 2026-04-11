@@ -35,6 +35,7 @@ import {
   emitAuditEvent,
 } from "../audit/audit.service.js";
 import { AUTH_MESSAGES } from "./auth.constants.js";
+import { AUDIT_MESSAGES } from "../audit/audit.messages.js";
 
 const setAuthCookies = (res, tokens) => {
   res.cookie(
@@ -74,7 +75,7 @@ export const signupHandler = async (req, res) => {
     category: AUDIT_CATEGORY.AUTH,
     status: AUDIT_STATUS.SUCCESS,
     targetUserId: result.user.id,
-    message: "User signed up successfully",
+    message: AUDIT_MESSAGES.AUTH_SIGNUP_SUCCESS,
     metadata: {
       email: result.user.email,
       sessionId: result.session.id,
@@ -105,7 +106,7 @@ export const loginHandler = async (req, res) => {
       event: AUDIT_EVENTS.AUTH_LOGIN_SUCCESS,
       category: AUDIT_CATEGORY.AUTH,
       status: AUDIT_STATUS.SUCCESS,
-      message: "User logged in",
+      message: AUDIT_MESSAGES.AUTH_LOGIN_SUCCESS,
       metadata: {
         email: result.user.email,
         deviceId: result.session.deviceId,
@@ -124,7 +125,7 @@ export const loginHandler = async (req, res) => {
       category: AUDIT_CATEGORY.AUTH,
       status: AUDIT_STATUS.FAILURE,
       severity: "warn",
-      message: "Login attempt failed",
+      message: AUDIT_MESSAGES.AUTH_LOGIN_FAILED,
       metadata: {
         email: payload.email,
         reason: error.message,
@@ -145,7 +146,7 @@ export const logoutHandler = async (req, res) => {
     event: AUDIT_EVENTS.AUTH_LOGOUT,
     category: AUDIT_CATEGORY.AUTH,
     status: AUDIT_STATUS.SUCCESS,
-    message: "User logged out",
+    message: AUDIT_MESSAGES.AUTH_LOGOUT,
   });
 
   clearAuthCookies(res);
@@ -162,7 +163,7 @@ export const refreshHandler = async (req, res) => {
       category: AUDIT_CATEGORY.AUTH,
       status: AUDIT_STATUS.FAILURE,
       severity: "warn",
-      message: "Token refresh failed due to missing refresh token",
+      message: AUDIT_MESSAGES.AUTH_REFRESH_FAILED_MISSING_TOKEN,
     });
     unauthorized(TOKEN_ERROR_MESSAGES.MISSING_REFRESH);
   }
@@ -179,7 +180,7 @@ export const refreshHandler = async (req, res) => {
       event: AUDIT_EVENTS.AUTH_REFRESH_SUCCESS,
       category: AUDIT_CATEGORY.AUTH,
       status: AUDIT_STATUS.SUCCESS,
-      message: "Token refresh succeeded",
+      message: AUDIT_MESSAGES.AUTH_REFRESH_SUCCESS,
       metadata: {
         newVersion: result.session.version,
       },
@@ -196,7 +197,7 @@ export const refreshHandler = async (req, res) => {
       category: AUDIT_CATEGORY.AUTH,
       status: AUDIT_STATUS.FAILURE,
       severity: "warn",
-      message: "Token refresh failed",
+      message: AUDIT_MESSAGES.AUTH_REFRESH_FAILED,
       metadata: {
         reason: error.message,
       },
@@ -216,7 +217,7 @@ export const verifyEmailHandler = async (req, res) => {
     event: AUDIT_EVENTS.AUTH_EMAIL_VERIFIED,
     category: AUDIT_CATEGORY.AUTH,
     status: AUDIT_STATUS.SUCCESS,
-    message: "Email verification completed",
+    message: AUDIT_MESSAGES.AUTH_EMAIL_VERIFIED,
   });
 
   res.status(200).json({ message: AUTH_MESSAGES.EMAIL_VERIFIED });
@@ -233,7 +234,7 @@ export const resendVerificationHandler = async (req, res) => {
     event: AUDIT_EVENTS.AUTH_VERIFICATION_RESEND,
     category: AUDIT_CATEGORY.AUTH,
     status: AUDIT_STATUS.SUCCESS,
-    message: "Verification email resend requested",
+    message: AUDIT_MESSAGES.AUTH_VERIFICATION_RESEND,
     metadata: {
       email: payload.email,
     },
@@ -253,7 +254,7 @@ export const forgotPasswordHandler = async (req, res) => {
     event: AUDIT_EVENTS.AUTH_FORGOT_PASSWORD_REQUESTED,
     category: AUDIT_CATEGORY.AUTH,
     status: AUDIT_STATUS.SUCCESS,
-    message: "Forgot password requested",
+    message: AUDIT_MESSAGES.AUTH_FORGOT_PASSWORD_REQUESTED,
     metadata: {
       email: payload.email,
     },
@@ -273,7 +274,7 @@ export const resetPasswordHandler = async (req, res) => {
     event: AUDIT_EVENTS.AUTH_PASSWORD_RESET_SUCCESS,
     category: AUDIT_CATEGORY.AUTH,
     status: AUDIT_STATUS.SUCCESS,
-    message: "Password reset completed",
+    message: AUDIT_MESSAGES.AUTH_PASSWORD_RESET_SUCCESS,
   });
 
   clearAuthCookies(res);
@@ -289,7 +290,7 @@ export const listSessionsHandler = async (req, res) => {
     event: AUDIT_EVENTS.AUTH_SESSIONS_VIEWED,
     category: AUDIT_CATEGORY.AUTH,
     status: AUDIT_STATUS.SUCCESS,
-    message: "Active sessions viewed",
+    message: AUDIT_MESSAGES.AUTH_SESSIONS_VIEWED,
     metadata: {
       count: sessions.length,
     },
@@ -308,7 +309,7 @@ export const revokeSessionHandler = async (req, res) => {
     event: AUDIT_EVENTS.AUTH_SESSION_REVOKED,
     category: AUDIT_CATEGORY.AUTH,
     status: AUDIT_STATUS.SUCCESS,
-    message: "Session revoked",
+    message: AUDIT_MESSAGES.AUTH_SESSION_REVOKED,
     metadata: {
       revokedSessionId: req.params.id,
     },

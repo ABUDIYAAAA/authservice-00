@@ -16,6 +16,7 @@ import { buildRequestDevice } from "../auth/device.service.js";
 import { handleOauthCallback, getOauthStartUrl } from "./oauth.service.js";
 import { OAUTH_CALLBACK_QUERY_CODE, OAUTH_ERRORS } from "./oauth.constants.js";
 import { COOKIE_NAMES } from "../../core/constants/cookie.constants.js";
+import { AUDIT_MESSAGES } from "../audit/audit.messages.js";
 
 const setAuthCookies = (res, tokens) => {
   res.cookie(
@@ -40,7 +41,7 @@ export const oauthStartHandler = async (req, res) => {
     event: AUDIT_EVENTS.OAUTH_START,
     category: AUDIT_CATEGORY.OAUTH,
     status: AUDIT_STATUS.SUCCESS,
-    message: "OAuth flow started",
+    message: AUDIT_MESSAGES.OAUTH_START,
     metadata: {
       provider,
     },
@@ -61,7 +62,7 @@ export const oauthCallbackHandler = async (req, res) => {
       category: AUDIT_CATEGORY.OAUTH,
       status: AUDIT_STATUS.FAILURE,
       severity: "warn",
-      message: "OAuth callback failed due to missing code",
+      message: AUDIT_MESSAGES.OAUTH_CALLBACK_FAILED_MISSING_CODE,
       metadata: {
         provider,
       },
@@ -84,7 +85,7 @@ export const oauthCallbackHandler = async (req, res) => {
       event: AUDIT_EVENTS.OAUTH_CALLBACK_SUCCESS,
       category: AUDIT_CATEGORY.OAUTH,
       status: AUDIT_STATUS.SUCCESS,
-      message: "OAuth callback succeeded",
+      message: AUDIT_MESSAGES.OAUTH_CALLBACK_SUCCESS,
       metadata: {
         provider,
         email: result.user.email,
@@ -100,7 +101,7 @@ export const oauthCallbackHandler = async (req, res) => {
       category: AUDIT_CATEGORY.OAUTH,
       status: AUDIT_STATUS.FAILURE,
       severity: "warn",
-      message: "OAuth callback failed",
+      message: AUDIT_MESSAGES.OAUTH_CALLBACK_FAILED,
       metadata: {
         provider,
         reason: error.message,

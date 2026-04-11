@@ -1,0 +1,24 @@
+export const AUDIT_MESSAGES = {
+  AUTH_SIGNUP_SUCCESS: "User signed up successfully",
+  AUTH_LOGIN_SUCCESS: "User logged in",
+  AUTH_LOGIN_FAILED: "Login attempt failed",
+  AUTH_LOGOUT: "User logged out",
+  AUTH_REFRESH_SUCCESS: "Token refresh succeeded",
+  AUTH_REFRESH_FAILED: "Token refresh failed",
+  AUTH_REFRESH_FAILED_MISSING_TOKEN:
+    "Token refresh failed due to missing refresh token",
+  AUTH_EMAIL_VERIFIED: "Email verification completed",
+  AUTH_VERIFICATION_RESEND: "Verification email resend requested",
+  AUTH_FORGOT_PASSWORD_REQUESTED: "Forgot password requested",
+  AUTH_PASSWORD_RESET_SUCCESS: "Password reset completed",
+  AUTH_SESSIONS_VIEWED: "Active sessions viewed",
+  AUTH_SESSION_REVOKED: "Session revoked",
+  USER_PROFILE_VIEWED: "User profile viewed",
+  USER_PROFILE_UPDATED: "User profile updated",
+  USER_PROFILE_DELETED: "User profile deleted",
+  OAUTH_START: "OAuth flow started",
+  OAUTH_CALLBACK_SUCCESS: "OAuth callback succeeded",
+  OAUTH_CALLBACK_FAILED: "OAuth callback failed",
+  OAUTH_CALLBACK_FAILED_MISSING_CODE:
+    "OAuth callback failed due to missing code",
+};

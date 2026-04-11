@@ -9,6 +9,7 @@ import {
   buildAuditContextFromRequest,
   emitAuditEvent,
 } from "../audit/audit.service.js";
+import { AUDIT_MESSAGES } from "../audit/audit.messages.js";
 
 export const getMeHandler = async (req, res) => {
   const auditContext = buildAuditContextFromRequest(req);
@@ -20,7 +21,7 @@ export const getMeHandler = async (req, res) => {
     category: AUDIT_CATEGORY.USER,
     status: AUDIT_STATUS.SUCCESS,
     targetUserId: user.id,
-    message: "User profile viewed",
+    message: AUDIT_MESSAGES.USER_PROFILE_VIEWED,
   });
 
   res.status(200).json({ user });
@@ -37,7 +38,7 @@ export const updateMeHandler = async (req, res) => {
     category: AUDIT_CATEGORY.USER,
     status: AUDIT_STATUS.SUCCESS,
     targetUserId: user.id,
-    message: "User profile updated",
+    message: AUDIT_MESSAGES.USER_PROFILE_UPDATED,
     metadata: {
       updatedFields: Object.keys(payload),
     },
@@ -57,7 +58,7 @@ export const deleteMeHandler = async (req, res) => {
     category: AUDIT_CATEGORY.USER,
     status: AUDIT_STATUS.SUCCESS,
     targetUserId: req.auth.sub,
-    message: "User profile deleted",
+    message: AUDIT_MESSAGES.USER_PROFILE_DELETED,
   });
 
   res.status(204).send();

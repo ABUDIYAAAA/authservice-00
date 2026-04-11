@@ -252,7 +252,7 @@ export const updateOrganizationClientForUser = async (
       updates.name = normalizedName;
     }
 
-    if (payload.authorizedOrigins) {
+    if (Object.prototype.hasOwnProperty.call(payload, "authorizedOrigins")) {
       updates.authorizedOrigins = normalizeAuthorizedOrigins(
         payload.authorizedOrigins,
       );

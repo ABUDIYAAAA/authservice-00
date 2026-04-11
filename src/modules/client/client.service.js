@@ -8,6 +8,10 @@ import {
 } from "../../utils/errors.js";
 import { hashPassword } from "../auth/password.service.js";
 import {
+  decryptClientSecret,
+  encryptClientSecret,
+} from "./client-secret-crypto.js";
+import {
   findOrganizationById,
   findOrganizationMember,
 } from "../organization/organization.repository.js";
@@ -29,6 +33,7 @@ import {
   listOrganizationClientProviders,
   listOrganizationClientProvidersByOrgId,
   listOrganizationClientsByOrgId,
+  findOrganizationClientWebhookConfig,
   updateOrganizationClientById,
   updateOrganizationClientProvider,
 } from "./client.repository.js";
@@ -76,7 +81,10 @@ const sanitizeProvider = (provider, canManage) => {
     isActive: provider.isActive,
     createdAt: provider.createdAt,
     updatedAt: provider.updatedAt,
-    secretConfigured: Boolean(provider.providerClientSecretHash),
+    secretConfigured: Boolean(
+      provider.providerClientSecretHash ||
+      provider.providerClientSecretCiphertext,
+    ),
   };
 
   if (!canManage) {
@@ -99,6 +107,11 @@ const sanitizeClient = (client, providers, canManage) => ({
   updatedByUserId: client.updatedByUserId,
   createdAt: client.createdAt,
   updatedAt: client.updatedAt,
+  webhookEnabled: client.webhookEnabled || false,
+  webhookUrl: canManage ? client.webhookUrl || null : undefined,
+  webhookSecretSuffix: canManage
+    ? client.webhookSecretSuffix || null
+    : undefined,
   providers: providers.map((provider) => sanitizeProvider(provider, canManage)),
 });
 
@@ -306,11 +319,15 @@ export const addOrganizationClientProviderForUser = async (
   }
 
   const providerSecretHash = await hashPassword(payload.providerClientSecret);
+  const providerSecretCiphertext = encryptClientSecret(
+    payload.providerClientSecret,
+  );
   const created = await createOrganizationClientProvider({
     clientId: client.id,
     provider: payload.provider,
     providerClientId: payload.providerClientId,
     providerClientSecretHash: providerSecretHash,
+    providerClientSecretCiphertext: providerSecretCiphertext,
     providerClientSecretSuffix: extractSecretSuffix(
       payload.providerClientSecret,
     ),
@@ -359,6 +376,9 @@ export const updateOrganizationClientProviderForUser = async (
     updates.providerClientSecretHash = await hashPassword(
       payload.providerClientSecret,
     );
+    updates.providerClientSecretCiphertext = encryptClientSecret(
+      payload.providerClientSecret,
+    );
     updates.providerClientSecretSuffix = extractSecretSuffix(
       payload.providerClientSecret,
     );
@@ -394,4 +414,82 @@ export const deleteOrganizationClientProviderForUser = async (
   }
 
   return CLIENT_MESSAGES.PROVIDER_REMOVED;
+};
+
+export const configureOrganizationClientWebhookForUser = async (
+  orgId,
+  clientId,
+  actorUserId,
+  payload,
+) => {
+  await requireOrganization(orgId);
+  await requireOrganizationManageRole(orgId, actorUserId);
+
+  const encryptedWebhookSecret = encryptClientSecret(payload.webhookSecret);
+  const webhookSecretHash = await hashPassword(payload.webhookSecret);
+
+  const updated = await updateOrganizationClientById(orgId, clientId, {
+    webhookUrl: payload.webhookUrl,
+    webhookSecretHash,
+    webhookSecretCiphertext: encryptedWebhookSecret,
+    webhookSecretSuffix: extractSecretSuffix(payload.webhookSecret),
+    webhookEnabled: true,
+    updatedByUserId: actorUserId,
+  });
+
+  if (!updated) {
+    notFound(CLIENT_ERRORS.CLIENT_NOT_FOUND);
+  }
+
+  return {
+    webhookEnabled: true,
+    webhookUrl: updated.webhookUrl,
+    webhookSecretSuffix: updated.webhookSecretSuffix,
+  };
+};
+
+export const disableOrganizationClientWebhookForUser = async (
+  orgId,
+  clientId,
+  actorUserId,
+) => {
+  await requireOrganization(orgId);
+  await requireOrganizationManageRole(orgId, actorUserId);
+
+  const updated = await updateOrganizationClientById(orgId, clientId, {
+    webhookEnabled: false,
+    webhookUrl: null,
+    webhookSecretHash: null,
+    webhookSecretCiphertext: null,
+    webhookSecretSuffix: null,
+    updatedByUserId: actorUserId,
+  });
+
+  if (!updated) {
+    notFound(CLIENT_ERRORS.CLIENT_NOT_FOUND);
+  }
+
+  return CLIENT_MESSAGES.WEBHOOK_DISABLED;
+};
+
+export const getOrganizationClientWebhookConfigForDispatch = async (
+  orgId,
+  clientId,
+) => {
+  const config = await findOrganizationClientWebhookConfig(orgId, clientId);
+  if (!config || !config.webhookEnabled || !config.webhookUrl) {
+    return null;
+  }
+
+  if (!config.webhookSecretCiphertext) {
+    return null;
+  }
+
+  return {
+    clientId: config.id,
+    orgId: config.orgId,
+    clientName: config.name,
+    webhookUrl: config.webhookUrl,
+    webhookSecret: decryptClientSecret(config.webhookSecretCiphertext),
+  };
 };

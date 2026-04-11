@@ -283,6 +283,29 @@ export const OPENAPI_COMPONENTS = {
         isActive: { type: "boolean" },
       },
     },
+    ConfigureOrganizationClientWebhookRequest: {
+      type: "object",
+      required: ["webhookUrl", "webhookSecret"],
+      properties: {
+        webhookUrl: { type: "string", format: "uri" },
+        webhookSecret: { type: "string", minLength: 12 },
+      },
+    },
+    OrganizationClientWebhookConfig: {
+      type: "object",
+      properties: {
+        webhookEnabled: { type: "boolean" },
+        webhookUrl: { type: "string", format: "uri" },
+        webhookSecretSuffix: { type: "string", nullable: true },
+      },
+    },
+    ConfirmOrganizationOauthChallengeRequest: {
+      type: "object",
+      required: ["challengeToken"],
+      properties: {
+        challengeToken: { type: "string" },
+      },
+    },
     OrganizationListResponse: {
       type: "object",
       properties: {

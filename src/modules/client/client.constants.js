@@ -20,6 +20,7 @@ export const CLIENT_ERRORS = {
   PROVIDER_EXISTS: "Provider is already configured for this client",
   INVALID_PROVIDER: "Only google and github providers are supported",
   INVALID_AUTHORIZED_ORIGIN: "Authorized origins must be valid URLs",
+  WEBHOOK_NOT_CONFIGURED: "Client webhook is not configured",
 };
 
 export const CLIENT_MESSAGES = {
@@ -27,4 +28,6 @@ export const CLIENT_MESSAGES = {
   PROVIDER_REMOVED: "Provider removed from client",
   PROVIDER_CONFIGURED: "Provider configured for client",
   PROVIDER_UPDATED: "Provider credentials updated",
+  WEBHOOK_CONFIGURED: "Client webhook configured",
+  WEBHOOK_DISABLED: "Client webhook disabled",
 };

@@ -21,16 +21,30 @@ import { AppError } from "../../utils/errors.js";
 import {
   OAUTH_ERROR_CODES,
   OAUTH_ERRORS,
+  OAUTH_FLOW_TYPES,
   OAUTH_PROVIDERS,
 } from "./oauth.constants.js";
+import {
+  findActiveOrganizationClientProvider,
+  findOrganizationClientById,
+  listActiveOrganizationClientProviders,
+} from "../client/client.repository.js";
+import { decryptClientSecret } from "../client/client-secret-crypto.js";
+import { createOauthState, consumeOauthState } from "./oauth-state.service.js";
+import {
+  consumeReloginChallenge,
+  consumeReloginConfirmationRequirement,
+  createReloginChallenge,
+} from "./oauth-challenge.service.js";
+import { findSession } from "../auth/session.service.js";
 
-const getProviderAuthorizationUrl = (provider) => {
+const getProviderAuthorizationUrl = (provider, credentials = {}) => {
   if (provider === OAUTH_PROVIDERS.GOOGLE) {
-    return getGoogleAuthorizationUrl();
+    return getGoogleAuthorizationUrl(credentials);
   }
 
   if (provider === OAUTH_PROVIDERS.GITHUB) {
-    return getGithubAuthorizationUrl();
+    return getGithubAuthorizationUrl(credentials);
   }
 
   throw new AppError(OAUTH_ERRORS.INVALID_PROVIDER, 400, {
@@ -38,9 +52,9 @@ const getProviderAuthorizationUrl = (provider) => {
   });
 };
 
-const getProviderProfile = async (provider, code) => {
+const getProviderProfile = async (provider, code, credentials = {}) => {
   if (provider === OAUTH_PROVIDERS.GOOGLE) {
-    const tokenPayload = await exchangeGoogleCode(code);
+    const tokenPayload = await exchangeGoogleCode(code, credentials);
     const profile = await fetchGoogleProfile(tokenPayload.access_token);
 
     return {
@@ -54,7 +68,7 @@ const getProviderProfile = async (provider, code) => {
   }
 
   if (provider === OAUTH_PROVIDERS.GITHUB) {
-    const tokenPayload = await exchangeGithubCode(code);
+    const tokenPayload = await exchangeGithubCode(code, credentials);
     const profile = await fetchGithubProfile(tokenPayload.access_token);
 
     return {
@@ -74,9 +88,63 @@ export const getOauthStartUrl = (provider) => {
   return getProviderAuthorizationUrl(provider);
 };
 
-export const handleOauthCallback = async ({ provider, code, deviceInfo }) => {
-  const providerData = await getProviderProfile(provider, code);
+const validateReturnTo = (returnTo, authorizedOrigins) => {
+  const returnToUrl = new URL(returnTo);
+  const allowedOrigins = Array.isArray(authorizedOrigins)
+    ? authorizedOrigins
+    : [];
 
+  if (allowedOrigins.length === 0) {
+    const defaultOrigin = new URL(env.FRONTEND_URL).origin;
+    if (returnToUrl.origin !== defaultOrigin) {
+      throw new AppError(OAUTH_ERRORS.RETURN_TO_NOT_ALLOWED, 400, {
+        code: OAUTH_ERROR_CODES.RETURN_TO_NOT_ALLOWED,
+      });
+    }
+
+    return returnToUrl.toString();
+  }
+
+  if (!allowedOrigins.includes(returnToUrl.origin)) {
+    throw new AppError(OAUTH_ERRORS.RETURN_TO_NOT_ALLOWED, 400, {
+      code: OAUTH_ERROR_CODES.RETURN_TO_NOT_ALLOWED,
+      details: {
+        origin: returnToUrl.origin,
+      },
+    });
+  }
+
+  return returnToUrl.toString();
+};
+
+const resolveClientOauthProviderConfig = async (orgId, clientId, provider) => {
+  const providerConfig = await findActiveOrganizationClientProvider(
+    orgId,
+    clientId,
+    provider,
+  );
+
+  if (!providerConfig) {
+    throw new AppError(OAUTH_ERRORS.CLIENT_PROVIDER_NOT_CONFIGURED, 404, {
+      code: OAUTH_ERROR_CODES.CLIENT_PROVIDER_NOT_CONFIGURED,
+    });
+  }
+
+  return providerConfig;
+};
+
+const buildTokenPayload = (user, session) => ({
+  sub: user.id,
+  sid: session.id,
+  ver: session.version,
+});
+
+const completeOauthAuthSession = async ({
+  provider,
+  providerData,
+  deviceInfo,
+  orgId = null,
+}) => {
   if (!providerData.profile.email) {
     throw new AppError(OAUTH_ERRORS.MISSING_EMAIL, 400, {
       code: OAUTH_ERROR_CODES.MISSING_EMAIL,
@@ -114,7 +182,7 @@ export const handleOauthCallback = async ({ provider, code, deviceInfo }) => {
     const sessionRow = await createUserSession(
       {
         userId: oauthUser.id,
-        orgId: null,
+        orgId,
         deviceId: deviceInfo.deviceId,
         userAgent: deviceInfo.userAgent,
         ipAddress: deviceInfo.ipAddress,
@@ -125,17 +193,219 @@ export const handleOauthCallback = async ({ provider, code, deviceInfo }) => {
     return { user: oauthUser, session: sessionRow };
   });
 
-  const payload = {
-    sub: user.id,
-    sid: session.id,
-    ver: session.version,
-  };
+  const payload = buildTokenPayload(user, session);
 
   return {
     user,
     session,
     accessToken: signAccessToken(payload),
     refreshToken: signRefreshToken(payload),
+  };
+};
+
+export const listOrganizationClientOauthProviders = async ({
+  orgId,
+  clientId,
+}) => {
+  const client = await findOrganizationClientById(orgId, clientId);
+  if (!client) {
+    throw new AppError(OAUTH_ERRORS.CLIENT_PROVIDER_NOT_CONFIGURED, 404, {
+      code: OAUTH_ERROR_CODES.CLIENT_PROVIDER_NOT_CONFIGURED,
+    });
+  }
+
+  const providers = await listActiveOrganizationClientProviders(
+    orgId,
+    clientId,
+  );
+
+  return {
+    client: {
+      id: client.id,
+      orgId: client.orgId,
+      name: client.name,
+    },
+    providers: providers.map((entry) => ({
+      provider: entry.provider,
+      startUrl: `${env.API_BASE_URL}/api/oauth/orgs/${orgId}/clients/${clientId}/${entry.provider}/start`,
+    })),
+  };
+};
+
+export const getOrganizationClientOauthStart = async ({
+  orgId,
+  clientId,
+  provider,
+  returnTo,
+  flowType = OAUTH_FLOW_TYPES.SIGNIN,
+  clientContext,
+}) => {
+  const providerConfig = await resolveClientOauthProviderConfig(
+    orgId,
+    clientId,
+    provider,
+  );
+
+  const normalizedReturnTo = validateReturnTo(
+    returnTo || env.FRONTEND_URL,
+    providerConfig.authorizedOrigins,
+  );
+
+  const stateToken = await createOauthState({
+    orgId,
+    clientId,
+    provider,
+    returnTo: normalizedReturnTo,
+    flowType,
+    clientContext: clientContext || null,
+  });
+
+  const redirectUrl = getProviderAuthorizationUrl(provider, {
+    clientId: providerConfig.providerClientId,
+    redirectUri: providerConfig.callbackUrl,
+    state: stateToken,
+  });
+
+  return {
+    stateToken,
+    redirectUrl,
+  };
+};
+
+export const handleOauthCallback = async ({ provider, code, deviceInfo }) => {
+  const providerData = await getProviderProfile(provider, code);
+  const result = await completeOauthAuthSession({
+    provider,
+    providerData,
+    deviceInfo,
+    orgId: null,
+  });
+
+  return {
+    ...result,
     redirectTo: env.FRONTEND_URL,
+  };
+};
+
+export const handleOrganizationClientOauthCallback = async ({
+  orgId,
+  clientId,
+  provider,
+  code,
+  stateToken,
+  deviceInfo,
+}) => {
+  const state = await consumeOauthState(stateToken);
+  if (!state) {
+    throw new AppError(OAUTH_ERRORS.INVALID_STATE, 400, {
+      code: OAUTH_ERROR_CODES.INVALID_STATE,
+    });
+  }
+
+  if (
+    state.orgId !== orgId ||
+    state.clientId !== clientId ||
+    state.provider !== provider
+  ) {
+    throw new AppError(OAUTH_ERRORS.STATE_MISMATCH, 400, {
+      code: OAUTH_ERROR_CODES.INVALID_STATE,
+    });
+  }
+
+  const providerConfig = await resolveClientOauthProviderConfig(
+    orgId,
+    clientId,
+    provider,
+  );
+
+  if (!providerConfig.providerClientSecretCiphertext) {
+    throw new AppError(OAUTH_ERRORS.CLIENT_PROVIDER_SECRET_UNAVAILABLE, 400, {
+      code: OAUTH_ERROR_CODES.CLIENT_PROVIDER_SECRET_UNAVAILABLE,
+    });
+  }
+
+  const providerData = await getProviderProfile(provider, code, {
+    clientId: providerConfig.providerClientId,
+    clientSecret: decryptClientSecret(
+      providerConfig.providerClientSecretCiphertext,
+    ),
+    redirectUri: providerConfig.callbackUrl,
+  });
+
+  const authResult = await completeOauthAuthSession({
+    provider,
+    providerData,
+    deviceInfo,
+    orgId,
+  });
+
+  const reloginRequirement = await consumeReloginConfirmationRequirement({
+    orgId,
+    clientId,
+    userId: authResult.user.id,
+  });
+
+  if (reloginRequirement) {
+    const challengeToken = await createReloginChallenge({
+      userId: authResult.user.id,
+      sessionId: authResult.session.id,
+      sessionVersion: authResult.session.version,
+      orgId,
+      clientId,
+      flowType: state.flowType,
+      clientContext: state.clientContext,
+      redirectTo: state.returnTo,
+    });
+
+    return {
+      ...authResult,
+      redirectTo: state.returnTo,
+      flowType: state.flowType,
+      clientContext: state.clientContext,
+      confirmationRequired: true,
+      challengeToken,
+    };
+  }
+
+  return {
+    ...authResult,
+    redirectTo: state.returnTo,
+    flowType: state.flowType,
+    clientContext: state.clientContext,
+    confirmationRequired: false,
+  };
+};
+
+export const confirmOrganizationOauthChallenge = async (challengeToken) => {
+  const challenge = await consumeReloginChallenge(challengeToken);
+  if (!challenge) {
+    throw new AppError(OAUTH_ERRORS.INVALID_STATE, 400, {
+      code: OAUTH_ERROR_CODES.INVALID_STATE,
+    });
+  }
+
+  const session = await findSession(challenge.sessionId);
+  if (
+    !session ||
+    !session.isActive ||
+    session.version !== challenge.sessionVersion
+  ) {
+    throw new AppError(OAUTH_ERRORS.INVALID_STATE, 400, {
+      code: OAUTH_ERROR_CODES.INVALID_STATE,
+    });
+  }
+
+  const payload = {
+    sub: challenge.userId,
+    sid: challenge.sessionId,
+    ver: challenge.sessionVersion,
+  };
+
+  return {
+    accessToken: signAccessToken(payload),
+    refreshToken: signRefreshToken(payload),
+    redirectTo: challenge.redirectTo,
+    flowType: challenge.flowType,
+    clientContext: challenge.clientContext,
   };
 };

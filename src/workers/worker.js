@@ -14,6 +14,7 @@ import {
   ensureRedisConnection,
 } from "../core/config/redis.js";
 import { startEmailWorker } from "../modules/email/email.worker.js";
+import { startServiceWebhookWorker } from "../modules/webhook/webhook.worker.js";
 import { deadLetterQueue } from "../queues/index.js";
 import {
   QUEUE_JOB_NAMES,
@@ -105,6 +106,7 @@ deviceAlertWorker.on("failed", async (job, error) => {
 });
 
 const emailWorker = startEmailWorker();
+const serviceWebhookWorker = startServiceWebhookWorker();
 
 const shutdown = async () => {
   logger.info("Shutting down workers");
@@ -112,6 +114,7 @@ const shutdown = async () => {
     cleanupWorker.close(),
     deviceAlertWorker.close(),
     emailWorker.close(),
+    serviceWebhookWorker.close(),
   ]);
   await closeRedisConnection();
   process.exit(0);

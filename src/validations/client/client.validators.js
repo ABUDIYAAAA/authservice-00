@@ -43,3 +43,8 @@ export const updateOrganizationClientProviderSchema = z
   .refine((value) => Object.keys(value).length > 0, {
     message: "At least one field must be provided",
   });
+
+export const configureOrganizationClientWebhookSchema = z.object({
+  webhookUrl: z.string().url(),
+  webhookSecret: z.string().min(12).max(255),
+});

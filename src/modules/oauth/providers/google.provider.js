@@ -5,25 +5,39 @@ import { OAUTH_PROVIDER_DETAILS } from "./provider.constants.js";
 
 const GOOGLE_PROVIDER = OAUTH_PROVIDER_DETAILS[OAUTH_PROVIDERS.GOOGLE];
 
-export const getGoogleAuthorizationUrl = () => {
+const resolveGoogleCredentials = (overrides = {}) => ({
+  clientId: overrides.clientId || env.GOOGLE_CLIENT_ID,
+  clientSecret: overrides.clientSecret || env.GOOGLE_CLIENT_SECRET,
+  redirectUri: overrides.redirectUri || env.GOOGLE_CALLBACK_URL,
+});
+
+export const getGoogleAuthorizationUrl = (overrides = {}) => {
+  const credentials = resolveGoogleCredentials(overrides);
+
   const params = new URLSearchParams({
-    client_id: env.GOOGLE_CLIENT_ID,
-    redirect_uri: env.GOOGLE_CALLBACK_URL,
+    client_id: credentials.clientId,
+    redirect_uri: credentials.redirectUri,
     response_type: "code",
     scope: GOOGLE_PROVIDER.scope,
     access_type: GOOGLE_PROVIDER.accessType,
     prompt: GOOGLE_PROVIDER.prompt,
   });
 
+  if (overrides.state) {
+    params.set("state", overrides.state);
+  }
+
   return `${GOOGLE_PROVIDER.authUrl}?${params.toString()}`;
 };
 
-export const exchangeGoogleCode = async (code) => {
+export const exchangeGoogleCode = async (code, overrides = {}) => {
+  const credentials = resolveGoogleCredentials(overrides);
+
   const payload = new URLSearchParams({
     code,
-    client_id: env.GOOGLE_CLIENT_ID,
-    client_secret: env.GOOGLE_CLIENT_SECRET,
-    redirect_uri: env.GOOGLE_CALLBACK_URL,
+    client_id: credentials.clientId,
+    client_secret: credentials.clientSecret,
+    redirect_uri: credentials.redirectUri,
     grant_type: GOOGLE_PROVIDER.tokenGrantType,
   });
 

@@ -26,3 +26,8 @@ export const deadLetterQueue = new Queue(QUEUE_NAMES.DEAD_LETTER, {
   connection,
   defaultJobOptions: QUEUE_DEFAULT_OPTIONS,
 });
+
+export const serviceWebhookQueue = new Queue(QUEUE_NAMES.SERVICE_WEBHOOK, {
+  connection,
+  defaultJobOptions: QUEUE_DEFAULT_OPTIONS,
+});

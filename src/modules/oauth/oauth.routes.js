@@ -1,9 +1,36 @@
 import { Router } from "express";
 import asyncHandler from "../../utils/async-handler.js";
-import { oauthCallbackHandler, oauthStartHandler } from "./oauth.controller.js";
+import {
+  confirmOrganizationOauthChallengeHandler,
+  listOrganizationOauthProvidersHandler,
+  oauthCallbackHandler,
+  oauthStartHandler,
+  organizationOauthCallbackHandler,
+  organizationOauthStartHandler,
+} from "./oauth.controller.js";
 import { OAUTH_PROVIDERS, OAUTH_ROUTE_PATHS } from "./oauth.constants.js";
 
 const router = Router();
+
+router.get(
+  OAUTH_ROUTE_PATHS.ORG_CLIENT_PROVIDERS,
+  asyncHandler(listOrganizationOauthProvidersHandler),
+);
+
+router.get(
+  OAUTH_ROUTE_PATHS.ORG_CLIENT_START,
+  asyncHandler(organizationOauthStartHandler),
+);
+
+router.get(
+  OAUTH_ROUTE_PATHS.ORG_CLIENT_CALLBACK,
+  asyncHandler(organizationOauthCallbackHandler),
+);
+
+router.post(
+  OAUTH_ROUTE_PATHS.ORG_CLIENT_CONFIRM,
+  asyncHandler(confirmOrganizationOauthChallengeHandler),
+);
 
 router.get(
   OAUTH_ROUTE_PATHS.GOOGLE,

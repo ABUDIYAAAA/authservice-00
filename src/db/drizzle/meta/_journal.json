@@ -29,6 +29,20 @@
       "when": 1775928497403,
       "tag": "0003_worthless_sister_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775930878954,
+      "tag": "0004_wealthy_wendigo",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775931060405,
+      "tag": "0005_minor_annihilus",
+      "breakpoints": true
     }
   ]
 }

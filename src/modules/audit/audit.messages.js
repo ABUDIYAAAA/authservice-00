@@ -36,6 +36,8 @@ export const AUDIT_MESSAGES = {
   ORG_CLIENT_PROVIDER_ADDED: "Organization client provider configured",
   ORG_CLIENT_PROVIDER_UPDATED: "Organization client provider updated",
   ORG_CLIENT_PROVIDER_REMOVED: "Organization client provider removed",
+  ORG_CLIENT_WEBHOOK_CONFIGURED: "Organization client webhook configured",
+  ORG_CLIENT_WEBHOOK_DISABLED: "Organization client webhook disabled",
   OAUTH_START: "OAuth flow started",
   OAUTH_CALLBACK_SUCCESS: "OAuth callback succeeded",
   OAUTH_CALLBACK_FAILED: "OAuth callback failed",

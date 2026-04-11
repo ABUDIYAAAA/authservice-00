@@ -19,6 +19,11 @@ export const loginSchema = z.object({
   orgId: z.string().uuid().optional(),
 });
 
+export const logoutSchema = z.object({
+  clientId: z.string().uuid().optional(),
+  clientContext: z.string().trim().min(1).max(255).optional(),
+});
+
 export const resendVerificationSchema = z.object({
   email: z.string().email(),
 });

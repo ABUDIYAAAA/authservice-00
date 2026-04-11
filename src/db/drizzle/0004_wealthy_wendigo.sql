@@ -1,0 +1,1 @@
+ALTER TABLE "organization_client_providers" ADD COLUMN "provider_client_secret_ciphertext" text;

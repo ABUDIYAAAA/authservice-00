@@ -14,6 +14,7 @@ import { buildRequestDevice } from "./device.service.js";
 import {
   forgotPasswordSchema,
   loginSchema,
+  logoutSchema,
   resendVerificationSchema,
   resetPasswordSchema,
   signupSchema,
@@ -138,8 +139,14 @@ export const loginHandler = async (req, res) => {
 
 export const logoutHandler = async (req, res) => {
   const auditContext = buildAuditContextFromRequest(req);
+  const payload = logoutSchema.parse(req.body || {});
 
-  await logout({ userId: req.auth.sub, sessionId: req.auth.sid });
+  await logout({
+    userId: req.auth.sub,
+    sessionId: req.auth.sid,
+    clientId: payload.clientId,
+    clientContext: payload.clientContext,
+  });
 
   await emitAuditEvent({
     ...auditContext,
@@ -147,6 +154,10 @@ export const logoutHandler = async (req, res) => {
     category: AUDIT_CATEGORY.AUTH,
     status: AUDIT_STATUS.SUCCESS,
     message: AUDIT_MESSAGES.AUTH_LOGOUT,
+    metadata: {
+      clientId: payload.clientId || null,
+      clientContext: payload.clientContext || null,
+    },
   });
 
   clearAuthCookies(res);

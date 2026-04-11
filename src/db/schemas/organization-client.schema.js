@@ -5,6 +5,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  text,
   timestamp,
   uniqueIndex,
   uuid,
@@ -31,6 +32,11 @@ export const organizationClients = pgTable(
     authorizedOrigins: jsonb("authorized_origins")
       .default(sql`'[]'::jsonb`)
       .notNull(),
+    webhookUrl: varchar("webhook_url", { length: 500 }),
+    webhookSecretHash: varchar("webhook_secret_hash", { length: 255 }),
+    webhookSecretCiphertext: text("webhook_secret_ciphertext"),
+    webhookSecretSuffix: varchar("webhook_secret_suffix", { length: 16 }),
+    webhookEnabled: boolean("webhook_enabled").default(false).notNull(),
     createdByUserId: uuid("created_by_user_id").references(() => users.id, {
       onDelete: "set null",
     }),
@@ -68,6 +74,7 @@ export const organizationClientProviders = pgTable(
     providerClientSecretHash: varchar("provider_client_secret_hash", {
       length: 255,
     }).notNull(),
+    providerClientSecretCiphertext: text("provider_client_secret_ciphertext"),
     providerClientSecretSuffix: varchar("provider_client_secret_suffix", {
       length: 16,
     }).notNull(),

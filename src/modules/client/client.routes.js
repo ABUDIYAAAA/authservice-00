@@ -3,9 +3,11 @@ import asyncHandler from "../../utils/async-handler.js";
 import { requireAuth } from "../auth/auth.middleware.js";
 import {
   addOrganizationClientProviderHandler,
+  configureOrganizationClientWebhookHandler,
   createOrganizationClientHandler,
   deleteOrganizationClientHandler,
   deleteOrganizationClientProviderHandler,
+  disableOrganizationClientWebhookHandler,
   getOrganizationClientHandler,
   listOrganizationClientsHandler,
   updateOrganizationClientHandler,
@@ -61,6 +63,20 @@ router.delete(
   requireAuth,
   organizationClientProviderMutationLimiter,
   asyncHandler(deleteOrganizationClientProviderHandler),
+);
+
+router.post(
+  "/:clientId/webhook",
+  requireAuth,
+  organizationClientProviderMutationLimiter,
+  asyncHandler(configureOrganizationClientWebhookHandler),
+);
+
+router.delete(
+  "/:clientId/webhook",
+  requireAuth,
+  organizationClientProviderMutationLimiter,
+  asyncHandler(disableOrganizationClientWebhookHandler),
 );
 
 export default router;

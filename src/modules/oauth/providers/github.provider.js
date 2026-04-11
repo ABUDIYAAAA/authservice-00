@@ -5,22 +5,36 @@ import { OAUTH_PROVIDER_DETAILS } from "./provider.constants.js";
 
 const GITHUB_PROVIDER = OAUTH_PROVIDER_DETAILS[OAUTH_PROVIDERS.GITHUB];
 
-export const getGithubAuthorizationUrl = () => {
+const resolveGithubCredentials = (overrides = {}) => ({
+  clientId: overrides.clientId || env.GITHUB_CLIENT_ID,
+  clientSecret: overrides.clientSecret || env.GITHUB_CLIENT_SECRET,
+  redirectUri: overrides.redirectUri || env.GITHUB_CALLBACK_URL,
+});
+
+export const getGithubAuthorizationUrl = (overrides = {}) => {
+  const credentials = resolveGithubCredentials(overrides);
+
   const params = new URLSearchParams({
-    client_id: env.GITHUB_CLIENT_ID,
-    redirect_uri: env.GITHUB_CALLBACK_URL,
+    client_id: credentials.clientId,
+    redirect_uri: credentials.redirectUri,
     scope: GITHUB_PROVIDER.scope,
   });
+
+  if (overrides.state) {
+    params.set("state", overrides.state);
+  }
 
   return `${GITHUB_PROVIDER.authUrl}?${params.toString()}`;
 };
 
-export const exchangeGithubCode = async (code) => {
+export const exchangeGithubCode = async (code, overrides = {}) => {
+  const credentials = resolveGithubCredentials(overrides);
+
   const payload = {
     code,
-    client_id: env.GITHUB_CLIENT_ID,
-    client_secret: env.GITHUB_CLIENT_SECRET,
-    redirect_uri: env.GITHUB_CALLBACK_URL,
+    client_id: credentials.clientId,
+    client_secret: credentials.clientSecret,
+    redirect_uri: credentials.redirectUri,
   };
 
   const { data } = await axios.post(GITHUB_PROVIDER.tokenUrl, payload, {

@@ -1610,6 +1610,144 @@
         }
       }
     },
+    "/api/organizations/{orgId}/clients/{clientId}/webhook": {
+      "post": {
+        "summary": "Configure organization client logout webhook",
+        "tags": [
+          "Clients"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureOrganizationClientWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Organization client webhook configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "webhook": {
+                      "$ref": "#/components/schemas/OrganizationClientWebhookConfig"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Organization or client not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Disable organization client logout webhook",
+        "tags": [
+          "Clients"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization client webhook disabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Organization or client not found"
+          }
+        }
+      }
+    },
     "/api/organizations/invites/{token}": {
       "get": {
         "summary": "Get invite details by token for current user",
@@ -1794,6 +1932,261 @@
           },
           "400": {
             "description": "Missing or invalid authorization code"
+          }
+        }
+      }
+    },
+    "/api/oauth/orgs/{orgId}/clients/{clientId}/providers": {
+      "get": {
+        "summary": "List configured OAuth providers for an organization client",
+        "tags": [
+          "OAuth"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configured OAuth providers for client",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "client": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "orgId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "providers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "provider": {
+                            "type": "string",
+                            "enum": [
+                              "google",
+                              "github"
+                            ]
+                          },
+                          "startUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Client not found"
+          }
+        }
+      }
+    },
+    "/api/oauth/orgs/{orgId}/clients/{clientId}/{provider}/start": {
+      "get": {
+        "summary": "Start organization client OAuth flow",
+        "tags": [
+          "OAuth"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google",
+                "github"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "returnTo",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          {
+            "in": "query",
+            "name": "flowType",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "signin",
+                "signup"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to org-client provider authorization page"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Client provider not configured"
+          }
+        }
+      }
+    },
+    "/api/oauth/orgs/{orgId}/clients/{clientId}/{provider}/callback": {
+      "get": {
+        "summary": "Handle organization client OAuth callback",
+        "tags": [
+          "OAuth"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google",
+                "github"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Handle org-client OAuth callback and continue auth flow"
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/api/oauth/orgs/confirm": {
+      "post": {
+        "summary": "Confirm relogin challenge for organization OAuth flow",
+        "tags": [
+          "OAuth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmOrganizationOauthChallengeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OAuth confirmation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "redirectTo": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
           }
         }
       }
@@ -2407,6 +2800,50 @@
           },
           "isActive": {
             "type": "boolean"
+          }
+        }
+      },
+      "ConfigureOrganizationClientWebhookRequest": {
+        "type": "object",
+        "required": [
+          "webhookUrl",
+          "webhookSecret"
+        ],
+        "properties": {
+          "webhookUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "webhookSecret": {
+            "type": "string",
+            "minLength": 12
+          }
+        }
+      },
+      "OrganizationClientWebhookConfig": {
+        "type": "object",
+        "properties": {
+          "webhookEnabled": {
+            "type": "boolean"
+          },
+          "webhookUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "webhookSecretSuffix": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ConfirmOrganizationOauthChallengeRequest": {
+        "type": "object",
+        "required": [
+          "challengeToken"
+        ],
+        "properties": {
+          "challengeToken": {
+            "type": "string"
           }
         }
       },

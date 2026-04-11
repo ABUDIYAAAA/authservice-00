@@ -46,6 +46,9 @@ import {
 } from "./auth.constants.js";
 import { EMAIL_SUBJECTS } from "../email/email.constants.js";
 import { QUEUE_JOB_NAMES } from "../../core/constants/queue.constants.js";
+import { setReloginConfirmationRequirement } from "../oauth/oauth-challenge.service.js";
+import { queueServiceLogoutWebhook } from "../webhook/webhook.queue.js";
+import { findOrganizationClientById } from "../client/client.repository.js";
 
 const generateOneTimeToken = () =>
   crypto.randomBytes(AUTH_TOKEN_BYTES).toString("hex");
@@ -209,11 +212,45 @@ export const login = async (input, deviceInfo) => {
   };
 };
 
-export const logout = async ({ userId, sessionId }) => {
+export const logout = async ({
+  userId,
+  sessionId,
+  clientId,
+  clientContext,
+}) => {
   const revoked = await revokeSession(userId, sessionId);
   if (!revoked) {
     notFound(AUTH_ERRORS.SESSION_NOT_FOUND);
   }
+
+  if (!clientId || !revoked.orgId) {
+    return;
+  }
+
+  const organizationClient = await findOrganizationClientById(
+    revoked.orgId,
+    clientId,
+  );
+
+  if (!organizationClient) {
+    return;
+  }
+
+  await Promise.all([
+    setReloginConfirmationRequirement({
+      orgId: revoked.orgId,
+      clientId,
+      userId,
+      clientContext: clientContext || null,
+    }),
+    queueServiceLogoutWebhook({
+      orgId: revoked.orgId,
+      clientId,
+      userId,
+      sessionId: revoked.id,
+      clientContext: clientContext || null,
+    }),
+  ]);
 };
 
 export const refreshAuth = async (refreshToken) => {

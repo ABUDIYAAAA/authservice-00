@@ -1,4 +1,5 @@
 import {
+  configureOrganizationClientWebhookSchema,
   createOrganizationClientSchema,
   createOrganizationClientProviderSchema,
   organizationClientParamSchema,
@@ -8,9 +9,11 @@ import {
 } from "../../validations/client/client.validators.js";
 import {
   addOrganizationClientProviderForUser,
+  configureOrganizationClientWebhookForUser,
   createOrganizationClientForUser,
   deleteOrganizationClientForUser,
   deleteOrganizationClientProviderForUser,
+  disableOrganizationClientWebhookForUser,
   getOrganizationClientForUser,
   listOrganizationClientsForUser,
   updateOrganizationClientForUser,
@@ -244,6 +247,61 @@ export const deleteOrganizationClientProviderHandler = async (req, res) => {
     metadata: {
       clientId,
       provider,
+    },
+  });
+
+  res.status(200).json({ message });
+};
+
+export const configureOrganizationClientWebhookHandler = async (req, res) => {
+  const auditContext = buildAuditContextFromRequest(req);
+  const { orgId, clientId } = organizationClientParamSchema.parse(req.params);
+  const payload = configureOrganizationClientWebhookSchema.parse(req.body);
+
+  const webhook = await configureOrganizationClientWebhookForUser(
+    orgId,
+    clientId,
+    req.auth.sub,
+    payload,
+  );
+
+  await emitAuditEvent({
+    ...auditContext,
+    event: AUDIT_EVENTS.ORG_CLIENT_WEBHOOK_CONFIGURED,
+    category: AUDIT_CATEGORY.ORGANIZATION,
+    status: AUDIT_STATUS.SUCCESS,
+    orgId,
+    message: AUDIT_MESSAGES.ORG_CLIENT_WEBHOOK_CONFIGURED,
+    metadata: {
+      clientId,
+      webhookUrl: webhook.webhookUrl,
+    },
+  });
+
+  res
+    .status(200)
+    .json({ message: CLIENT_MESSAGES.WEBHOOK_CONFIGURED, webhook });
+};
+
+export const disableOrganizationClientWebhookHandler = async (req, res) => {
+  const auditContext = buildAuditContextFromRequest(req);
+  const { orgId, clientId } = organizationClientParamSchema.parse(req.params);
+
+  const message = await disableOrganizationClientWebhookForUser(
+    orgId,
+    clientId,
+    req.auth.sub,
+  );
+
+  await emitAuditEvent({
+    ...auditContext,
+    event: AUDIT_EVENTS.ORG_CLIENT_WEBHOOK_DISABLED,
+    category: AUDIT_CATEGORY.ORGANIZATION,
+    status: AUDIT_STATUS.SUCCESS,
+    orgId,
+    message: AUDIT_MESSAGES.ORG_CLIENT_WEBHOOK_DISABLED,
+    metadata: {
+      clientId,
     },
   });
 

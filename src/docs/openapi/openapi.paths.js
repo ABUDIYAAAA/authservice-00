@@ -895,6 +895,88 @@ export const OPENAPI_PATH_DEFINITIONS = {
       },
     },
   },
+  [OPENAPI_PATHS.ORGANIZATION_CLIENT_WEBHOOK]: {
+    post: {
+      summary: "Configure organization client logout webhook",
+      tags: [OPENAPI_TAGS.CLIENTS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/ConfigureOrganizationClientWebhookRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_WEBHOOK_CONFIGURED,
+          {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+              webhook: {
+                $ref: "#/components/schemas/OrganizationClientWebhookConfig",
+              },
+            },
+          },
+        ),
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization or client not found" },
+      },
+    },
+    delete: {
+      summary: "Disable organization client logout webhook",
+      tags: [OPENAPI_TAGS.CLIENTS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_WEBHOOK_DISABLED,
+          {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+            },
+          },
+        ),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization or client not found" },
+      },
+    },
+  },
   [OPENAPI_PATHS.ORGANIZATION_INVITE_BY_TOKEN]: {
     get: {
       summary: "Get invite details by token for current user",
@@ -1008,6 +1090,165 @@ export const OPENAPI_PATH_DEFINITIONS = {
       responses: {
         302: { description: OPENAPI_DESCRIPTIONS.OAUTH_REDIRECT },
         400: { description: OPENAPI_DESCRIPTIONS.MISSING_OR_INVALID_CODE },
+      },
+    },
+  },
+  [OPENAPI_PATHS.OAUTH_ORG_CLIENT_PROVIDERS]: {
+    get: {
+      summary: "List configured OAuth providers for an organization client",
+      tags: [OPENAPI_TAGS.OAUTH],
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonObjectResponse(OPENAPI_DESCRIPTIONS.OAUTH_CLIENT_PROVIDERS, {
+          type: "object",
+          properties: {
+            client: {
+              type: "object",
+              properties: {
+                id: { type: "string", format: "uuid" },
+                orgId: { type: "string", format: "uuid" },
+                name: { type: "string" },
+              },
+            },
+            providers: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  provider: { type: "string", enum: ["google", "github"] },
+                  startUrl: { type: "string", format: "uri" },
+                },
+              },
+            },
+          },
+        }),
+        404: { description: "Client not found" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.OAUTH_ORG_CLIENT_START]: {
+    get: {
+      summary: "Start organization client OAuth flow",
+      tags: [OPENAPI_TAGS.OAUTH],
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "provider",
+          required: true,
+          schema: { type: "string", enum: ["google", "github"] },
+        },
+        {
+          in: "query",
+          name: "returnTo",
+          required: false,
+          schema: { type: "string", format: "uri" },
+        },
+        {
+          in: "query",
+          name: "flowType",
+          required: false,
+          schema: { type: "string", enum: ["signin", "signup"] },
+        },
+      ],
+      responses: {
+        302: { description: OPENAPI_DESCRIPTIONS.OAUTH_ORG_CLIENT_START },
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        404: { description: "Client provider not configured" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.OAUTH_ORG_CLIENT_CALLBACK]: {
+    get: {
+      summary: "Handle organization client OAuth callback",
+      tags: [OPENAPI_TAGS.OAUTH],
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "provider",
+          required: true,
+          schema: { type: "string", enum: ["google", "github"] },
+        },
+        {
+          in: "query",
+          name: "code",
+          required: true,
+          schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "state",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      responses: {
+        302: { description: OPENAPI_DESCRIPTIONS.OAUTH_ORG_CLIENT_CALLBACK },
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+      },
+    },
+  },
+  [OPENAPI_PATHS.OAUTH_ORG_CLIENT_CONFIRM]: {
+    post: {
+      summary: "Confirm relogin challenge for organization OAuth flow",
+      tags: [OPENAPI_TAGS.OAUTH],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/ConfirmOrganizationOauthChallengeRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.OAUTH_CONFIRMATION_COMPLETED,
+          {
+            type: "object",
+            properties: {
+              redirectTo: { type: "string", format: "uri" },
+            },
+          },
+        ),
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
       },
     },
   },

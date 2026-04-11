@@ -76,6 +76,34 @@ export const updateOrganizationClientById = async (
   return updated || null;
 };
 
+export const findOrganizationClientWebhookConfig = async (
+  orgId,
+  clientId,
+  tx = db,
+) => {
+  const [client] = await tx
+    .select({
+      id: organizationClients.id,
+      orgId: organizationClients.orgId,
+      name: organizationClients.name,
+      webhookUrl: organizationClients.webhookUrl,
+      webhookSecretHash: organizationClients.webhookSecretHash,
+      webhookSecretCiphertext: organizationClients.webhookSecretCiphertext,
+      webhookSecretSuffix: organizationClients.webhookSecretSuffix,
+      webhookEnabled: organizationClients.webhookEnabled,
+    })
+    .from(organizationClients)
+    .where(
+      and(
+        eq(organizationClients.orgId, orgId),
+        eq(organizationClients.id, clientId),
+      ),
+    )
+    .limit(1);
+
+  return client || null;
+};
+
 export const deleteOrganizationClientById = async (
   orgId,
   clientId,
@@ -142,6 +170,8 @@ export const listOrganizationClientProvidersByOrgId = async (
       providerClientId: organizationClientProviders.providerClientId,
       providerClientSecretHash:
         organizationClientProviders.providerClientSecretHash,
+      providerClientSecretCiphertext:
+        organizationClientProviders.providerClientSecretCiphertext,
       providerClientSecretSuffix:
         organizationClientProviders.providerClientSecretSuffix,
       callbackUrl: organizationClientProviders.callbackUrl,
@@ -157,6 +187,72 @@ export const listOrganizationClientProvidersByOrgId = async (
       eq(organizationClients.id, organizationClientProviders.clientId),
     )
     .where(eq(organizationClients.orgId, orgId))
+    .orderBy(asc(organizationClientProviders.createdAt));
+};
+
+export const findActiveOrganizationClientProvider = async (
+  orgId,
+  clientId,
+  provider,
+  tx = db,
+) => {
+  const [clientProvider] = await tx
+    .select({
+      clientId: organizationClientProviders.clientId,
+      provider: organizationClientProviders.provider,
+      providerClientId: organizationClientProviders.providerClientId,
+      providerClientSecretHash:
+        organizationClientProviders.providerClientSecretHash,
+      providerClientSecretCiphertext:
+        organizationClientProviders.providerClientSecretCiphertext,
+      providerClientSecretSuffix:
+        organizationClientProviders.providerClientSecretSuffix,
+      callbackUrl: organizationClientProviders.callbackUrl,
+      isActive: organizationClientProviders.isActive,
+      organizationName: organizationClients.name,
+      authorizedOrigins: organizationClients.authorizedOrigins,
+    })
+    .from(organizationClientProviders)
+    .innerJoin(
+      organizationClients,
+      eq(organizationClients.id, organizationClientProviders.clientId),
+    )
+    .where(
+      and(
+        eq(organizationClients.orgId, orgId),
+        eq(organizationClients.id, clientId),
+        eq(organizationClientProviders.provider, provider),
+        eq(organizationClientProviders.isActive, true),
+      ),
+    )
+    .limit(1);
+
+  return clientProvider || null;
+};
+
+export const listActiveOrganizationClientProviders = async (
+  orgId,
+  clientId,
+  tx = db,
+) => {
+  return tx
+    .select({
+      provider: organizationClientProviders.provider,
+      callbackUrl: organizationClientProviders.callbackUrl,
+      isActive: organizationClientProviders.isActive,
+    })
+    .from(organizationClientProviders)
+    .innerJoin(
+      organizationClients,
+      eq(organizationClients.id, organizationClientProviders.clientId),
+    )
+    .where(
+      and(
+        eq(organizationClients.orgId, orgId),
+        eq(organizationClients.id, clientId),
+        eq(organizationClientProviders.isActive, true),
+      ),
+    )
     .orderBy(asc(organizationClientProviders.createdAt));
 };
 

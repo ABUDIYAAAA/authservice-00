@@ -5,15 +5,18 @@ export const QUEUE_NAMES = {
   DEVICE_ALERT: "deviceAlertQueue",
   CLEANUP: "cleanupQueue",
   DEAD_LETTER: "deadLetterQueue",
+  SERVICE_WEBHOOK: "serviceWebhookQueue",
 };
 
 export const QUEUE_JOB_NAMES = {
   SEND_EMAIL: "send-email",
   NEW_DEVICE_ALERT: "new-device-alert",
+  SEND_SERVICE_WEBHOOK: "send-service-webhook",
   CLEANUP_EXPIRED_RECORDS: "cleanup-expired-records",
   CLEANUP_FAILED: "cleanup-failed",
   DEVICE_ALERT_FAILED: "device-alert-failed",
   EMAIL_FAILED: "email-failed",
+  SERVICE_WEBHOOK_FAILED: "service-webhook-failed",
 };
 
 export const QUEUE_DEFAULT_OPTIONS = {

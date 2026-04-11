@@ -1,0 +1,32 @@
+export const AUDIT_EVENTS = {
+  AUTH_SIGNUP_SUCCESS: "auth.signup.success",
+  AUTH_LOGIN_SUCCESS: "auth.login.success",
+  AUTH_LOGIN_FAILED: "auth.login.failed",
+  AUTH_LOGOUT: "auth.logout",
+  AUTH_REFRESH_SUCCESS: "auth.refresh.success",
+  AUTH_REFRESH_FAILED: "auth.refresh.failed",
+  AUTH_EMAIL_VERIFIED: "auth.email.verified",
+  AUTH_VERIFICATION_RESEND: "auth.email.verification_resent",
+  AUTH_FORGOT_PASSWORD_REQUESTED: "auth.password.forgot_requested",
+  AUTH_PASSWORD_RESET_SUCCESS: "auth.password.reset.success",
+  AUTH_SESSION_REVOKED: "auth.session.revoked",
+  AUTH_SESSIONS_VIEWED: "auth.session.list_viewed",
+  USER_PROFILE_VIEWED: "user.profile.viewed",
+  USER_PROFILE_UPDATED: "user.profile.updated",
+  USER_PROFILE_DELETED: "user.profile.deleted",
+  OAUTH_START: "oauth.start",
+  OAUTH_CALLBACK_SUCCESS: "oauth.callback.success",
+  OAUTH_CALLBACK_FAILED: "oauth.callback.failed",
+};
+
+export const AUDIT_CATEGORY = {
+  AUTH: "auth",
+  USER: "user",
+  OAUTH: "oauth",
+  SYSTEM: "system",
+};
+
+export const AUDIT_STATUS = {
+  SUCCESS: "success",
+  FAILURE: "failure",
+};

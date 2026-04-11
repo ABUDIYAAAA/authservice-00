@@ -4,4 +4,5 @@ export const EMAIL_SUBJECTS = {
   RESET_PASSWORD: "Reset your password",
   NEW_DEVICE: "New device login detected",
   PASSWORD_CHANGED: "Your password has changed",
+  ORGANIZATION_INVITE: "You have been invited to collaborate",
 };

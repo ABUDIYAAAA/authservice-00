@@ -34,3 +34,14 @@ export const passwordChangedTemplate = ({ changedAt }) => `
   <p>Your password was changed at ${changedAt}.</p>
   <p>If this was not you, contact support immediately.</p>
 `;
+
+export const organizationInviteTemplate = ({
+  organizationName,
+  inviteUrl,
+  expiresAt,
+}) => `
+  <h1>Organization Invite</h1>
+  <p>You were invited to join <strong>${organizationName}</strong> as a collaborator.</p>
+  <p>This invite expires at ${expiresAt}.</p>
+  <a href="${inviteUrl}">${inviteUrl}</a>
+`;

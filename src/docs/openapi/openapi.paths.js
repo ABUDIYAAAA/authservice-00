@@ -270,6 +270,290 @@ export const OPENAPI_PATH_DEFINITIONS = {
       },
     },
   },
+  [OPENAPI_PATHS.ORGANIZATIONS]: {
+    post: {
+      summary: "Create a new organization",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/CreateOrganizationRequest" },
+          },
+        },
+      },
+      responses: {
+        201: jsonObjectResponse(OPENAPI_DESCRIPTIONS.ORGANIZATION_CREATED, {
+          type: "object",
+          properties: {
+            organization: { $ref: "#/components/schemas/Organization" },
+            membership: { $ref: "#/components/schemas/OrganizationMembership" },
+          },
+        }),
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        409: { description: "Organization name already exists" },
+      },
+    },
+    get: {
+      summary: "List organizations for current user",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      responses: {
+        200: jsonRefResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_LIST,
+          "#/components/schemas/OrganizationListResponse",
+        ),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+      },
+    },
+  },
+  [OPENAPI_PATHS.ORGANIZATION_BY_ID]: {
+    get: {
+      summary: "Get organization details for a collaborator",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonRefResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_DETAILS,
+          "#/components/schemas/OrganizationDetailResponse",
+        ),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization not found" },
+      },
+    },
+    patch: {
+      summary: "Update organization metadata",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/UpdateOrganizationRequest" },
+          },
+        },
+      },
+      responses: {
+        200: jsonObjectResponse(OPENAPI_DESCRIPTIONS.ORGANIZATION_UPDATED, {
+          type: "object",
+          properties: {
+            organization: { $ref: "#/components/schemas/Organization" },
+          },
+        }),
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization not found" },
+        409: { description: "Organization name already exists" },
+      },
+    },
+    delete: {
+      summary: "Delete organization (owner only)",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: { description: OPENAPI_DESCRIPTIONS.ORGANIZATION_DELETED },
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization not found" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.ORGANIZATION_INVITES]: {
+    post: {
+      summary: "Invite a collaborator to organization",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/CreateOrganizationInviteRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        201: jsonObjectResponse(OPENAPI_DESCRIPTIONS.ORGANIZATION_INVITE_SENT, {
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            invite: { $ref: "#/components/schemas/OrganizationInvite" },
+          },
+        }),
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization not found" },
+        409: {
+          description:
+            "Active invite already exists or user is already a collaborator",
+        },
+      },
+    },
+    get: {
+      summary: "List organization invites",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonObjectResponse(OPENAPI_DESCRIPTIONS.ORGANIZATION_INVITE_LIST, {
+          type: "object",
+          properties: {
+            invites: {
+              type: "array",
+              items: { $ref: "#/components/schemas/OrganizationInvite" },
+            },
+          },
+        }),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization not found" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.ORGANIZATION_INVITE_BY_ID]: {
+    delete: {
+      summary: "Revoke organization invite",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "inviteId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_INVITE_REVOKED,
+          {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+              invite: { $ref: "#/components/schemas/OrganizationInvite" },
+            },
+          },
+        ),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Invite not found" },
+        409: { description: "Invite already used or revoked" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.ORGANIZATION_INVITE_BY_TOKEN]: {
+    get: {
+      summary: "Get invite details by token for current user",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "token",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_INVITE_DETAILS,
+          {
+            type: "object",
+            properties: {
+              invite: { $ref: "#/components/schemas/OrganizationInvite" },
+              organization: { $ref: "#/components/schemas/Organization" },
+            },
+          },
+        ),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        404: { description: "Organization not found" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.ORGANIZATION_INVITE_ACCEPT]: {
+    post: {
+      summary: "Accept organization invite",
+      tags: [OPENAPI_TAGS.ORGANIZATIONS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/AcceptOrganizationInviteRequest",
+            },
+          },
+        },
+      },
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_INVITE_ACCEPTED,
+          {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+              member: { $ref: "#/components/schemas/OrganizationMembership" },
+              invite: { $ref: "#/components/schemas/OrganizationInvite" },
+              organization: { $ref: "#/components/schemas/Organization" },
+            },
+          },
+        ),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        409: { description: "User is already a collaborator" },
+      },
+    },
+  },
   [OPENAPI_PATHS.OAUTH_GOOGLE]: {
     get: {
       summary: "Start Google OAuth authorization flow",

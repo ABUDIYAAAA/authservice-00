@@ -11,6 +11,7 @@ import errorMiddleware from "./src/utils/error-middleware.js";
 import authRoutes from "./src/modules/auth/auth.routes.js";
 import userRoutes from "./src/modules/user/user.routes.js";
 import oauthRoutes from "./src/modules/oauth/oauth.routes.js";
+import organizationRoutes from "./src/modules/organization/organization.routes.js";
 import {
   closeRedisConnection,
   ensureRedisConnection,
@@ -56,6 +57,7 @@ app.get("/api-docs.json", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/oauth", oauthRoutes);
+app.use("/api/organizations", organizationRoutes);
 
 /**
  * @openapi

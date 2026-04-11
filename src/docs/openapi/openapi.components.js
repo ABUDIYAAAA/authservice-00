@@ -99,5 +99,110 @@ export const OPENAPI_COMPONENTS = {
         },
       },
     },
+    Organization: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        name: { type: "string" },
+        slug: { type: "string" },
+        createdAt: { type: "string", format: "date-time" },
+        updatedAt: { type: "string", format: "date-time" },
+      },
+      required: ["id", "name", "slug", "createdAt", "updatedAt"],
+    },
+    OrganizationMembership: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        orgId: { type: "string", format: "uuid" },
+        userId: { type: "string", format: "uuid" },
+        role: { type: "string", enum: ["owner", "admin", "member"] },
+        invitedByUserId: { type: "string", format: "uuid", nullable: true },
+        email: { type: "string", format: "email" },
+        name: { type: "string", nullable: true },
+        avatarUrl: { type: "string", nullable: true },
+        createdAt: { type: "string", format: "date-time" },
+        updatedAt: { type: "string", format: "date-time" },
+      },
+    },
+    OrganizationInvite: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        orgId: { type: "string", format: "uuid" },
+        invitedEmail: { type: "string", format: "email" },
+        role: { type: "string", enum: ["owner", "admin", "member"] },
+        invitedByUserId: { type: "string", format: "uuid" },
+        acceptedByUserId: { type: "string", format: "uuid", nullable: true },
+        expiresAt: { type: "string", format: "date-time" },
+        createdAt: { type: "string", format: "date-time" },
+        usedAt: { type: "string", format: "date-time", nullable: true },
+        revokedAt: { type: "string", format: "date-time", nullable: true },
+      },
+    },
+    CreateOrganizationRequest: {
+      type: "object",
+      required: ["name"],
+      properties: {
+        name: { type: "string", minLength: 2, maxLength: 255 },
+      },
+    },
+    UpdateOrganizationRequest: {
+      type: "object",
+      properties: {
+        name: { type: "string", minLength: 2, maxLength: 255 },
+      },
+    },
+    CreateOrganizationInviteRequest: {
+      type: "object",
+      required: ["email"],
+      properties: {
+        email: { type: "string", format: "email" },
+        role: {
+          type: "string",
+          enum: ["owner", "admin", "member"],
+          default: "member",
+        },
+      },
+    },
+    AcceptOrganizationInviteRequest: {
+      type: "object",
+      required: ["token"],
+      properties: {
+        token: { type: "string" },
+      },
+    },
+    OrganizationListResponse: {
+      type: "object",
+      properties: {
+        organizations: {
+          type: "array",
+          items: {
+            allOf: [
+              { $ref: "#/components/schemas/Organization" },
+              {
+                type: "object",
+                properties: {
+                  role: {
+                    type: "string",
+                    enum: ["owner", "admin", "member"],
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+    },
+    OrganizationDetailResponse: {
+      type: "object",
+      properties: {
+        organization: { $ref: "#/components/schemas/Organization" },
+        members: {
+          type: "array",
+          items: { $ref: "#/components/schemas/OrganizationMembership" },
+        },
+      },
+    },
   },
 };

@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import db from "../db/client/db.js";
 import {
   emailVerificationTokens,
+  organizationInvites,
   passwordResetTokens,
   sessions,
 } from "../db/schemas/index.js";
@@ -31,6 +32,9 @@ const cleanupWorker = new Worker(
       db
         .delete(passwordResetTokens)
         .where(lte(passwordResetTokens.expiresAt, now)),
+      db
+        .delete(organizationInvites)
+        .where(lte(organizationInvites.expiresAt, now)),
     ]);
 
     logger.info("Cleanup job finished");

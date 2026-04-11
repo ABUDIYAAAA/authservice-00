@@ -39,6 +39,10 @@ const spec = {
       description: "Authentication and session management",
     },
     { name: OPENAPI_TAGS.USERS, description: "User profile operations" },
+    {
+      name: OPENAPI_TAGS.ORGANIZATIONS,
+      description: "Organization management and collaborator invites",
+    },
     { name: OPENAPI_TAGS.OAUTH, description: "OAuth provider integrations" },
   ],
   components: {

@@ -48,10 +48,13 @@ export const updateOrganizationClientProviderSchema = z
 
 export const configureOrganizationClientWebhookSchema = z.object({
   webhookUrl: z.string().url(),
-  webhookSecret: z.string().min(12).max(255),
 });
 
 export const rotateOrganizationClientSecretSchema = z.object({}).passthrough();
+
+export const rotateOrganizationClientWebhookSecretSchema = z
+  .object({})
+  .passthrough();
 
 export const listOrganizationClientUsersQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(200).default(50),

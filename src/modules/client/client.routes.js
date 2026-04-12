@@ -12,6 +12,7 @@ import {
   listOrganizationClientUsersHandler,
   listOrganizationClientsHandler,
   rotateOrganizationClientSecretHandler,
+  rotateOrganizationClientWebhookSecretHandler,
   updateOrganizationClientHandler,
   updateOrganizationClientProviderHandler,
 } from "./client.controller.js";
@@ -83,6 +84,13 @@ router.post(
   requireAuth,
   organizationClientProviderMutationLimiter,
   asyncHandler(configureOrganizationClientWebhookHandler),
+);
+
+router.post(
+  "/:clientId/webhook/secret/rotate",
+  requireAuth,
+  organizationClientProviderMutationLimiter,
+  asyncHandler(rotateOrganizationClientWebhookSecretHandler),
 );
 
 router.delete(

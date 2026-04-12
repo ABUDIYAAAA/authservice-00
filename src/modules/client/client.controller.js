@@ -6,6 +6,7 @@ import {
   organizationClientParamSchema,
   organizationClientProviderParamSchema,
   rotateOrganizationClientSecretSchema,
+  rotateOrganizationClientWebhookSecretSchema,
   updateOrganizationClientProviderSchema,
   updateOrganizationClientSchema,
 } from "../../validations/client/client.validators.js";
@@ -20,6 +21,7 @@ import {
   listOrganizationClientUsersForUser,
   listOrganizationClientsForUser,
   rotateOrganizationClientSecretForUser,
+  rotateOrganizationClientWebhookSecretForUser,
   updateOrganizationClientForUser,
   updateOrganizationClientProviderForUser,
 } from "./client.service.js";
@@ -313,6 +315,41 @@ export const disableOrganizationClientWebhookHandler = async (req, res) => {
   });
 
   res.status(200).json({ message });
+};
+
+export const rotateOrganizationClientWebhookSecretHandler = async (
+  req,
+  res,
+) => {
+  const auditContext = buildAuditContextFromRequest(req);
+  const { orgId, clientId } = organizationClientParamSchema.parse(req.params);
+
+  rotateOrganizationClientWebhookSecretSchema.parse(req.body || {});
+
+  const webhook = await rotateOrganizationClientWebhookSecretForUser(
+    orgId,
+    clientId,
+    req.auth.sub,
+  );
+
+  await emitAuditEvent({
+    ...auditContext,
+    event: AUDIT_EVENTS.ORG_CLIENT_WEBHOOK_CONFIGURED,
+    category: AUDIT_CATEGORY.ORGANIZATION,
+    status: AUDIT_STATUS.SUCCESS,
+    orgId,
+    message: AUDIT_MESSAGES.ORG_CLIENT_WEBHOOK_CONFIGURED,
+    metadata: {
+      clientId,
+      webhookUrl: webhook.webhookUrl,
+      rotatedWebhookSecret: true,
+    },
+  });
+
+  res.status(200).json({
+    message: CLIENT_MESSAGES.WEBHOOK_SECRET_ROTATED,
+    webhook,
+  });
 };
 
 export const rotateOrganizationClientSecretHandler = async (req, res) => {

@@ -46,6 +46,8 @@ export const OPENAPI_DESCRIPTIONS = {
   ORGANIZATION_CLIENT_WEBHOOK_CONFIGURED:
     "Organization client webhook configured",
   ORGANIZATION_CLIENT_WEBHOOK_DISABLED: "Organization client webhook disabled",
+  ORGANIZATION_CLIENT_WEBHOOK_SECRET_ROTATED:
+    "Organization client webhook secret rotated",
   ORGANIZATION_CLIENT_SECRET_ROTATED: "Organization client secret rotated",
   ORGANIZATION_CLIENT_USERS: "Organization client users",
   OAUTH_CLIENT_PROVIDERS: "Configured OAuth providers for client",
@@ -95,6 +97,8 @@ export const OPENAPI_PATHS = {
     "/api/organizations/{orgId}/clients/{clientId}/providers/{provider}",
   ORGANIZATION_CLIENT_WEBHOOK:
     "/api/organizations/{orgId}/clients/{clientId}/webhook",
+  ORGANIZATION_CLIENT_WEBHOOK_SECRET_ROTATE:
+    "/api/organizations/{orgId}/clients/{clientId}/webhook/secret/rotate",
   ORGANIZATION_INVITE_BY_TOKEN: "/api/organizations/invites/{token}",
   ORGANIZATION_INVITE_ACCEPT: "/api/organizations/invites/accept",
   OAUTH_GOOGLE: "/api/oauth/google",

@@ -30,5 +30,6 @@ export const CLIENT_MESSAGES = {
   PROVIDER_UPDATED: "Provider credentials updated",
   WEBHOOK_CONFIGURED: "Client webhook configured",
   WEBHOOK_DISABLED: "Client webhook disabled",
+  WEBHOOK_SECRET_ROTATED: "Client webhook secret rotated",
   CLIENT_SECRET_ROTATED: "Client secret rotated",
 };

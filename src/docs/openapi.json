@@ -1878,6 +1878,74 @@
         }
       }
     },
+    "/api/organizations/{orgId}/clients/{clientId}/webhook/secret/rotate": {
+      "post": {
+        "summary": "Rotate organization client logout webhook secret",
+        "tags": [
+          "Clients"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization client webhook secret rotated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "webhook": {
+                      "$ref": "#/components/schemas/OrganizationClientWebhookConfig"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Organization or client not found"
+          }
+        }
+      }
+    },
     "/api/organizations/invites/{token}": {
       "get": {
         "summary": "Get invite details by token for current user",
@@ -2858,6 +2926,10 @@
             "format": "uri",
             "nullable": true
           },
+          "webhookSecret": {
+            "type": "string",
+            "nullable": true
+          },
           "providers": {
             "type": "array",
             "items": {
@@ -2963,17 +3035,12 @@
       "ConfigureOrganizationClientWebhookRequest": {
         "type": "object",
         "required": [
-          "webhookUrl",
-          "webhookSecret"
+          "webhookUrl"
         ],
         "properties": {
           "webhookUrl": {
             "type": "string",
             "format": "uri"
-          },
-          "webhookSecret": {
-            "type": "string",
-            "minLength": 12
           }
         }
       },
@@ -2986,6 +3053,9 @@
           "webhookUrl": {
             "type": "string",
             "format": "uri"
+          },
+          "webhookSecret": {
+            "type": "string"
           }
         }
       },

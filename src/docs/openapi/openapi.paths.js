@@ -1046,6 +1046,45 @@ export const OPENAPI_PATH_DEFINITIONS = {
       },
     },
   },
+  [OPENAPI_PATHS.ORGANIZATION_CLIENT_WEBHOOK_SECRET_ROTATE]: {
+    post: {
+      summary: "Rotate organization client logout webhook secret",
+      tags: [OPENAPI_TAGS.CLIENTS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonObjectResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_WEBHOOK_SECRET_ROTATED,
+          {
+            type: "object",
+            properties: {
+              message: { type: "string" },
+              webhook: {
+                $ref: "#/components/schemas/OrganizationClientWebhookConfig",
+              },
+            },
+          },
+        ),
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization or client not found" },
+      },
+    },
+  },
   [OPENAPI_PATHS.ORGANIZATION_INVITE_BY_TOKEN]: {
     get: {
       summary: "Get invite details by token for current user",

@@ -51,6 +51,10 @@ const generatePlatformClientSecret = () => {
   return crypto.randomBytes(32).toString("base64url");
 };
 
+const generateWebhookSecret = () => {
+  return crypto.randomBytes(32).toString("base64url");
+};
+
 const normalizeAuthorizedOrigins = (authorizedOrigins) => {
   try {
     const deduplicated = new Set();
@@ -89,6 +93,18 @@ const normalizeRedirectUris = (redirectUris, { required = false } = {}) => {
 
 const getProviderCallbackUrl = (orgId, clientId, provider) => {
   return `${env.API_BASE_URL}${CLIENT_CALLBACK_BASE_PATH}/${orgId}/clients/${clientId}/${provider}/callback`;
+};
+
+const getVisibleWebhookSecret = (client, canManage) => {
+  if (!canManage) {
+    return undefined;
+  }
+
+  if (!client.webhookSecretCiphertext) {
+    return null;
+  }
+
+  return decryptClientSecret(client.webhookSecretCiphertext);
 };
 
 const sanitizeProvider = (provider, canManage) => {
@@ -130,6 +146,7 @@ const sanitizeClient = (client, providers, canManage) => ({
   ),
   webhookEnabled: client.webhookEnabled || false,
   webhookUrl: canManage ? client.webhookUrl || null : undefined,
+  webhookSecret: getVisibleWebhookSecret(client, canManage),
   providers: providers.map((provider) => sanitizeProvider(provider, canManage)),
 });
 
@@ -455,8 +472,9 @@ export const configureOrganizationClientWebhookForUser = async (
   await requireOrganization(orgId);
   await requireOrganizationManageRole(orgId, actorUserId);
 
-  const encryptedWebhookSecret = encryptClientSecret(payload.webhookSecret);
-  const webhookSecretHash = await hashPassword(payload.webhookSecret);
+  const plainWebhookSecret = generateWebhookSecret();
+  const encryptedWebhookSecret = encryptClientSecret(plainWebhookSecret);
+  const webhookSecretHash = await hashPassword(plainWebhookSecret);
 
   const updated = await updateOrganizationClientById(orgId, clientId, {
     webhookUrl: payload.webhookUrl,
@@ -473,6 +491,48 @@ export const configureOrganizationClientWebhookForUser = async (
   return {
     webhookEnabled: true,
     webhookUrl: updated.webhookUrl,
+    webhookSecret: plainWebhookSecret,
+  };
+};
+
+export const rotateOrganizationClientWebhookSecretForUser = async (
+  orgId,
+  clientId,
+  actorUserId,
+) => {
+  await requireOrganization(orgId);
+  await requireOrganizationManageRole(orgId, actorUserId);
+
+  const currentConfig = await findOrganizationClientWebhookConfig(
+    orgId,
+    clientId,
+  );
+  if (!currentConfig) {
+    notFound(CLIENT_ERRORS.CLIENT_NOT_FOUND);
+  }
+
+  if (!currentConfig.webhookEnabled || !currentConfig.webhookUrl) {
+    badRequest(CLIENT_ERRORS.WEBHOOK_NOT_CONFIGURED);
+  }
+
+  const plainWebhookSecret = generateWebhookSecret();
+  const encryptedWebhookSecret = encryptClientSecret(plainWebhookSecret);
+  const webhookSecretHash = await hashPassword(plainWebhookSecret);
+
+  const updated = await updateOrganizationClientById(orgId, clientId, {
+    webhookSecretHash,
+    webhookSecretCiphertext: encryptedWebhookSecret,
+    updatedByUserId: actorUserId,
+  });
+
+  if (!updated) {
+    notFound(CLIENT_ERRORS.CLIENT_NOT_FOUND);
+  }
+
+  return {
+    webhookEnabled: true,
+    webhookUrl: updated.webhookUrl,
+    webhookSecret: plainWebhookSecret,
   };
 };
 

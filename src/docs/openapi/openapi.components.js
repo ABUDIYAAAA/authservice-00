@@ -243,6 +243,7 @@ export const OPENAPI_COMPONENTS = {
         clientSecretConfigured: { type: "boolean" },
         webhookEnabled: { type: "boolean" },
         webhookUrl: { type: "string", format: "uri", nullable: true },
+        webhookSecret: { type: "string", nullable: true },
         providers: {
           type: "array",
           items: { $ref: "#/components/schemas/OrganizationClientProvider" },
@@ -300,10 +301,9 @@ export const OPENAPI_COMPONENTS = {
     },
     ConfigureOrganizationClientWebhookRequest: {
       type: "object",
-      required: ["webhookUrl", "webhookSecret"],
+      required: ["webhookUrl"],
       properties: {
         webhookUrl: { type: "string", format: "uri" },
-        webhookSecret: { type: "string", minLength: 12 },
       },
     },
     OrganizationClientWebhookConfig: {
@@ -311,6 +311,7 @@ export const OPENAPI_COMPONENTS = {
       properties: {
         webhookEnabled: { type: "boolean" },
         webhookUrl: { type: "string", format: "uri" },
+        webhookSecret: { type: "string" },
       },
     },
     OrganizationClientSecretResponse: {

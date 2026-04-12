@@ -5,8 +5,6 @@ export const CLIENT_ALLOWED_PROVIDERS = [
   OAUTH_PROVIDERS.GITHUB,
 ];
 
-export const CLIENT_SECRET_SUFFIX_LENGTH = 6;
-
 export const CLIENT_CALLBACK_BASE_PATH = "/api/oauth/orgs";
 
 export const CLIENT_ERRORS = {
@@ -20,6 +18,8 @@ export const CLIENT_ERRORS = {
   PROVIDER_EXISTS: "Provider is already configured for this client",
   INVALID_PROVIDER: "Only google and github providers are supported",
   INVALID_AUTHORIZED_ORIGIN: "Authorized origins must be valid URLs",
+  INVALID_REDIRECT_URI: "Redirect URIs must be valid URLs",
+  REDIRECT_URI_REQUIRED: "At least one redirect URI is required",
   WEBHOOK_NOT_CONFIGURED: "Client webhook is not configured",
 };
 
@@ -30,4 +30,5 @@ export const CLIENT_MESSAGES = {
   PROVIDER_UPDATED: "Provider credentials updated",
   WEBHOOK_CONFIGURED: "Client webhook configured",
   WEBHOOK_DISABLED: "Client webhook disabled",
+  CLIENT_SECRET_ROTATED: "Client secret rotated",
 };

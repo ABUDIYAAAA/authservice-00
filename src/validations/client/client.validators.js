@@ -16,12 +16,14 @@ export const organizationClientProviderParamSchema = z.object({
 
 export const createOrganizationClientSchema = z.object({
   name: z.string().trim().min(2).max(255),
+  redirectUris: z.array(z.string().url()).min(1).max(30),
   authorizedOrigins: z.array(z.string().url()).max(30).default([]),
 });
 
 export const updateOrganizationClientSchema = z
   .object({
     name: z.string().trim().min(2).max(255).optional(),
+    redirectUris: z.array(z.string().url()).min(1).max(30).optional(),
     authorizedOrigins: z.array(z.string().url()).max(30).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
@@ -47,4 +49,11 @@ export const updateOrganizationClientProviderSchema = z
 export const configureOrganizationClientWebhookSchema = z.object({
   webhookUrl: z.string().url(),
   webhookSecret: z.string().min(12).max(255),
+});
+
+export const rotateOrganizationClientSecretSchema = z.object({}).passthrough();
+
+export const listOrganizationClientUsersQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
 });

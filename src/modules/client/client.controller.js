@@ -2,8 +2,10 @@ import {
   configureOrganizationClientWebhookSchema,
   createOrganizationClientSchema,
   createOrganizationClientProviderSchema,
+  listOrganizationClientUsersQuerySchema,
   organizationClientParamSchema,
   organizationClientProviderParamSchema,
+  rotateOrganizationClientSecretSchema,
   updateOrganizationClientProviderSchema,
   updateOrganizationClientSchema,
 } from "../../validations/client/client.validators.js";
@@ -15,7 +17,9 @@ import {
   deleteOrganizationClientProviderForUser,
   disableOrganizationClientWebhookForUser,
   getOrganizationClientForUser,
+  listOrganizationClientUsersForUser,
   listOrganizationClientsForUser,
+  rotateOrganizationClientSecretForUser,
   updateOrganizationClientForUser,
   updateOrganizationClientProviderForUser,
 } from "./client.service.js";
@@ -38,7 +42,7 @@ export const createOrganizationClientHandler = async (req, res) => {
     .parse(req.params);
   const payload = createOrganizationClientSchema.parse(req.body);
 
-  const client = await createOrganizationClientForUser(
+  const result = await createOrganizationClientForUser(
     orgId,
     req.auth.sub,
     payload,
@@ -52,12 +56,15 @@ export const createOrganizationClientHandler = async (req, res) => {
     orgId,
     message: AUDIT_MESSAGES.ORG_CLIENT_CREATED,
     metadata: {
-      clientId: client.id,
-      name: client.name,
+      clientId: result.client.id,
+      name: result.client.name,
     },
   });
 
-  res.status(201).json({ client });
+  res.status(201).json({
+    client: result.client,
+    clientSecret: result.clientSecret,
+  });
 };
 
 export const listOrganizationClientsHandler = async (req, res) => {
@@ -306,4 +313,73 @@ export const disableOrganizationClientWebhookHandler = async (req, res) => {
   });
 
   res.status(200).json({ message });
+};
+
+export const rotateOrganizationClientSecretHandler = async (req, res) => {
+  const auditContext = buildAuditContextFromRequest(req);
+  const { orgId, clientId } = organizationClientParamSchema.parse(req.params);
+
+  rotateOrganizationClientSecretSchema.parse(req.body || {});
+
+  const result = await rotateOrganizationClientSecretForUser(
+    orgId,
+    clientId,
+    req.auth.sub,
+  );
+
+  await emitAuditEvent({
+    ...auditContext,
+    event: AUDIT_EVENTS.ORG_CLIENT_UPDATED,
+    category: AUDIT_CATEGORY.ORGANIZATION,
+    status: AUDIT_STATUS.SUCCESS,
+    orgId,
+    message: AUDIT_MESSAGES.ORG_CLIENT_UPDATED,
+    metadata: {
+      clientId,
+      rotatedClientSecret: true,
+    },
+  });
+
+  res.status(200).json({
+    message: CLIENT_MESSAGES.CLIENT_SECRET_ROTATED,
+    client: result.client,
+    clientSecret: result.clientSecret,
+  });
+};
+
+export const listOrganizationClientUsersHandler = async (req, res) => {
+  const auditContext = buildAuditContextFromRequest(req);
+  const { orgId, clientId } = organizationClientParamSchema.parse(req.params);
+  const query = listOrganizationClientUsersQuerySchema.parse(req.query);
+
+  const users = await listOrganizationClientUsersForUser(
+    orgId,
+    clientId,
+    req.auth.sub,
+    query,
+  );
+
+  await emitAuditEvent({
+    ...auditContext,
+    event: AUDIT_EVENTS.ORG_CLIENTS_LISTED,
+    category: AUDIT_CATEGORY.ORGANIZATION,
+    status: AUDIT_STATUS.SUCCESS,
+    orgId,
+    message: AUDIT_MESSAGES.ORG_CLIENTS_LISTED,
+    metadata: {
+      clientId,
+      count: users.length,
+      limit: query.limit,
+      offset: query.offset,
+    },
+  });
+
+  res.status(200).json({
+    users,
+    pagination: {
+      limit: query.limit,
+      offset: query.offset,
+      count: users.length,
+    },
+  });
 };

@@ -28,6 +28,7 @@ import {
   findActiveOrganizationClientProvider,
   findOrganizationClientById,
   listActiveOrganizationClientProviders,
+  upsertOrganizationClientUser,
 } from "../client/client.repository.js";
 import { decryptClientSecret } from "../client/client-secret-crypto.js";
 import { createOauthState, consumeOauthState } from "./oauth-state.service.js";
@@ -88,33 +89,30 @@ export const getOauthStartUrl = (provider) => {
   return getProviderAuthorizationUrl(provider);
 };
 
-const validateReturnTo = (returnTo, authorizedOrigins) => {
+const validateReturnTo = (returnTo, redirectUris) => {
   const returnToUrl = new URL(returnTo);
-  const allowedOrigins = Array.isArray(authorizedOrigins)
-    ? authorizedOrigins
-    : [];
+  const normalizedReturnTo = returnToUrl.toString();
+  const allowedRedirectUris = Array.isArray(redirectUris) ? redirectUris : [];
 
-  if (allowedOrigins.length === 0) {
-    const defaultOrigin = new URL(env.FRONTEND_URL).origin;
-    if (returnToUrl.origin !== defaultOrigin) {
-      throw new AppError(OAUTH_ERRORS.RETURN_TO_NOT_ALLOWED, 400, {
-        code: OAUTH_ERROR_CODES.RETURN_TO_NOT_ALLOWED,
-      });
-    }
-
-    return returnToUrl.toString();
-  }
-
-  if (!allowedOrigins.includes(returnToUrl.origin)) {
+  if (allowedRedirectUris.length === 0) {
     throw new AppError(OAUTH_ERRORS.RETURN_TO_NOT_ALLOWED, 400, {
       code: OAUTH_ERROR_CODES.RETURN_TO_NOT_ALLOWED,
       details: {
-        origin: returnToUrl.origin,
+        reason: "No redirect URIs configured for client",
       },
     });
   }
 
-  return returnToUrl.toString();
+  if (!allowedRedirectUris.includes(normalizedReturnTo)) {
+    throw new AppError(OAUTH_ERRORS.RETURN_TO_NOT_ALLOWED, 400, {
+      code: OAUTH_ERROR_CODES.RETURN_TO_NOT_ALLOWED,
+      details: {
+        returnTo: normalizedReturnTo,
+      },
+    });
+  }
+
+  return normalizedReturnTo;
 };
 
 const resolveClientOauthProviderConfig = async (orgId, clientId, provider) => {
@@ -144,6 +142,7 @@ const completeOauthAuthSession = async ({
   providerData,
   deviceInfo,
   orgId = null,
+  clientId = null,
 }) => {
   if (!providerData.profile.email) {
     throw new AppError(OAUTH_ERRORS.MISSING_EMAIL, 400, {
@@ -183,12 +182,17 @@ const completeOauthAuthSession = async ({
       {
         userId: oauthUser.id,
         orgId,
+        clientId,
         deviceId: deviceInfo.deviceId,
         userAgent: deviceInfo.userAgent,
         ipAddress: deviceInfo.ipAddress,
       },
       tx,
     );
+
+    if (clientId) {
+      await upsertOrganizationClientUser(clientId, oauthUser.id, tx);
+    }
 
     return { user: oauthUser, session: sessionRow };
   });
@@ -248,7 +252,7 @@ export const getOrganizationClientOauthStart = async ({
 
   const normalizedReturnTo = validateReturnTo(
     returnTo || env.FRONTEND_URL,
-    providerConfig.authorizedOrigins,
+    providerConfig.redirectUris,
   );
 
   const stateToken = await createOauthState({
@@ -337,6 +341,7 @@ export const handleOrganizationClientOauthCallback = async ({
     providerData,
     deviceInfo,
     orgId,
+    clientId,
   });
 
   const reloginRequirement = await consumeReloginConfirmationRequirement({

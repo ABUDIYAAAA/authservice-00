@@ -172,7 +172,7 @@ export const login = async (input, deviceInfo) => {
 
   const session = await createUserSession({
     userId: user.id,
-    orgId: input.orgId || null,
+    orgId: null,
     deviceId: deviceInfo.deviceId,
     userAgent: deviceInfo.userAgent,
     ipAddress: deviceInfo.ipAddress,

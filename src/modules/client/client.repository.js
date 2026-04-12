@@ -2,7 +2,9 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import db from "../../db/client/db.js";
 import {
   organizationClientProviders,
+  organizationClientUsers,
   organizationClients,
+  users,
 } from "../../db/schemas/index.js";
 
 export const createOrganizationClient = async (payload, tx = db) => {
@@ -89,7 +91,6 @@ export const findOrganizationClientWebhookConfig = async (
       webhookUrl: organizationClients.webhookUrl,
       webhookSecretHash: organizationClients.webhookSecretHash,
       webhookSecretCiphertext: organizationClients.webhookSecretCiphertext,
-      webhookSecretSuffix: organizationClients.webhookSecretSuffix,
       webhookEnabled: organizationClients.webhookEnabled,
     })
     .from(organizationClients)
@@ -172,8 +173,6 @@ export const listOrganizationClientProvidersByOrgId = async (
         organizationClientProviders.providerClientSecretHash,
       providerClientSecretCiphertext:
         organizationClientProviders.providerClientSecretCiphertext,
-      providerClientSecretSuffix:
-        organizationClientProviders.providerClientSecretSuffix,
       callbackUrl: organizationClientProviders.callbackUrl,
       isActive: organizationClientProviders.isActive,
       createdByUserId: organizationClientProviders.createdByUserId,
@@ -205,12 +204,11 @@ export const findActiveOrganizationClientProvider = async (
         organizationClientProviders.providerClientSecretHash,
       providerClientSecretCiphertext:
         organizationClientProviders.providerClientSecretCiphertext,
-      providerClientSecretSuffix:
-        organizationClientProviders.providerClientSecretSuffix,
       callbackUrl: organizationClientProviders.callbackUrl,
       isActive: organizationClientProviders.isActive,
       organizationName: organizationClients.name,
       authorizedOrigins: organizationClients.authorizedOrigins,
+      redirectUris: organizationClients.redirectUris,
     })
     .from(organizationClientProviders)
     .innerJoin(
@@ -292,4 +290,71 @@ export const deleteOrganizationClientProvider = async (
     .returning();
 
   return deleted || null;
+};
+
+export const upsertOrganizationClientUser = async (
+  clientId,
+  userId,
+  tx = db,
+) => {
+  const now = new Date();
+
+  const [row] = await tx
+    .insert(organizationClientUsers)
+    .values({
+      clientId,
+      userId,
+      firstSignedInAt: now,
+      lastSignedInAt: now,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [
+        organizationClientUsers.clientId,
+        organizationClientUsers.userId,
+      ],
+      set: {
+        lastSignedInAt: now,
+        updatedAt: now,
+      },
+    })
+    .returning();
+
+  return row;
+};
+
+export const listOrganizationClientUsers = async (
+  orgId,
+  clientId,
+  { limit = 50, offset = 0 } = {},
+  tx = db,
+) => {
+  return tx
+    .select({
+      userId: users.id,
+      email: users.email,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+      emailVerified: users.emailVerified,
+      lastLoginAt: users.lastLoginAt,
+      firstSignedInAt: organizationClientUsers.firstSignedInAt,
+      lastSignedInAt: organizationClientUsers.lastSignedInAt,
+      linkedAt: organizationClientUsers.createdAt,
+    })
+    .from(organizationClientUsers)
+    .innerJoin(
+      organizationClients,
+      eq(organizationClients.id, organizationClientUsers.clientId),
+    )
+    .innerJoin(users, eq(users.id, organizationClientUsers.userId))
+    .where(
+      and(
+        eq(organizationClients.orgId, orgId),
+        eq(organizationClientUsers.clientId, clientId),
+      ),
+    )
+    .orderBy(asc(organizationClientUsers.createdAt))
+    .limit(limit)
+    .offset(offset);
 };

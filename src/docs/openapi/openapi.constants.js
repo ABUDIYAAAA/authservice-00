@@ -46,6 +46,8 @@ export const OPENAPI_DESCRIPTIONS = {
   ORGANIZATION_CLIENT_WEBHOOK_CONFIGURED:
     "Organization client webhook configured",
   ORGANIZATION_CLIENT_WEBHOOK_DISABLED: "Organization client webhook disabled",
+  ORGANIZATION_CLIENT_SECRET_ROTATED: "Organization client secret rotated",
+  ORGANIZATION_CLIENT_USERS: "Organization client users",
   OAUTH_CLIENT_PROVIDERS: "Configured OAuth providers for client",
   OAUTH_ORG_CLIENT_START: "Redirect to org-client provider authorization page",
   OAUTH_ORG_CLIENT_CALLBACK:
@@ -83,6 +85,10 @@ export const OPENAPI_PATHS = {
     "/api/organizations/{orgId}/transfer-ownership",
   ORGANIZATION_CLIENTS: "/api/organizations/{orgId}/clients",
   ORGANIZATION_CLIENT_BY_ID: "/api/organizations/{orgId}/clients/{clientId}",
+  ORGANIZATION_CLIENT_USERS:
+    "/api/organizations/{orgId}/clients/{clientId}/users",
+  ORGANIZATION_CLIENT_SECRET_ROTATE:
+    "/api/organizations/{orgId}/clients/{clientId}/secret/rotate",
   ORGANIZATION_CLIENT_PROVIDERS:
     "/api/organizations/{orgId}/clients/{clientId}/providers",
   ORGANIZATION_CLIENT_PROVIDER_BY_ID:

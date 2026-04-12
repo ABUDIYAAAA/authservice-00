@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import db from "../../db/client/db.js";
 import env from "../../core/config/config.js";
 import {
@@ -20,7 +21,6 @@ import {
   CLIENT_CALLBACK_BASE_PATH,
   CLIENT_ERRORS,
   CLIENT_MESSAGES,
-  CLIENT_SECRET_SUFFIX_LENGTH,
 } from "./client.constants.js";
 import {
   createOrganizationClient,
@@ -30,6 +30,7 @@ import {
   findOrganizationClientById,
   findOrganizationClientByNormalizedName,
   findOrganizationClientProvider,
+  listOrganizationClientUsers,
   listOrganizationClientProviders,
   listOrganizationClientProvidersByOrgId,
   listOrganizationClientsByOrgId,
@@ -46,6 +47,10 @@ const CLIENT_MANAGE_ROLES = [
 const normalizeName = (name) => name.trim().replace(/\s+/g, " ");
 const normalizeForUniqueness = (value) => value.trim().toLowerCase();
 
+const generatePlatformClientSecret = () => {
+  return crypto.randomBytes(32).toString("base64url");
+};
+
 const normalizeAuthorizedOrigins = (authorizedOrigins) => {
   try {
     const deduplicated = new Set();
@@ -61,12 +66,25 @@ const normalizeAuthorizedOrigins = (authorizedOrigins) => {
   }
 };
 
-const extractSecretSuffix = (secret) => {
-  if (!secret) {
-    return "";
-  }
+const normalizeRedirectUris = (redirectUris, { required = false } = {}) => {
+  try {
+    const deduplicated = new Set();
 
-  return secret.slice(-CLIENT_SECRET_SUFFIX_LENGTH);
+    for (const redirectUri of redirectUris || []) {
+      const parsed = new URL(redirectUri);
+      deduplicated.add(parsed.toString());
+    }
+
+    const normalized = Array.from(deduplicated).sort();
+
+    if (required && normalized.length === 0) {
+      badRequest(CLIENT_ERRORS.REDIRECT_URI_REQUIRED);
+    }
+
+    return normalized;
+  } catch {
+    badRequest(CLIENT_ERRORS.INVALID_REDIRECT_URI);
+  }
 };
 
 const getProviderCallbackUrl = (orgId, clientId, provider) => {
@@ -94,7 +112,6 @@ const sanitizeProvider = (provider, canManage) => {
   return {
     ...base,
     providerClientId: provider.providerClientId,
-    providerClientSecretSuffix: provider.providerClientSecretSuffix,
   };
 };
 
@@ -102,16 +119,17 @@ const sanitizeClient = (client, providers, canManage) => ({
   id: client.id,
   orgId: client.orgId,
   name: client.name,
+  redirectUris: client.redirectUris,
   authorizedOrigins: client.authorizedOrigins,
   createdByUserId: client.createdByUserId,
   updatedByUserId: client.updatedByUserId,
   createdAt: client.createdAt,
   updatedAt: client.updatedAt,
+  clientSecretConfigured: Boolean(
+    client.clientSecretHash || client.clientSecretCiphertext,
+  ),
   webhookEnabled: client.webhookEnabled || false,
   webhookUrl: canManage ? client.webhookUrl || null : undefined,
-  webhookSecretSuffix: canManage
-    ? client.webhookSecretSuffix || null
-    : undefined,
   providers: providers.map((provider) => sanitizeProvider(provider, canManage)),
 });
 
@@ -183,9 +201,15 @@ export const createOrganizationClientForUser = async (
   await requireOrganizationManageRole(orgId, actorUserId);
 
   const normalizedName = normalizeName(payload.name);
+  const redirectUris = normalizeRedirectUris(payload.redirectUris, {
+    required: true,
+  });
   const authorizedOrigins = normalizeAuthorizedOrigins(
     payload.authorizedOrigins,
   );
+  const plainClientSecret = generatePlatformClientSecret();
+  const clientSecretHash = await hashPassword(plainClientSecret);
+  const clientSecretCiphertext = encryptClientSecret(plainClientSecret);
 
   const createdClient = await db.transaction(async (tx) => {
     await ensureClientNameUnique(orgId, normalizedName, null, tx);
@@ -194,7 +218,10 @@ export const createOrganizationClientForUser = async (
       {
         orgId,
         name: normalizedName,
+        redirectUris,
         authorizedOrigins,
+        clientSecretHash,
+        clientSecretCiphertext,
         createdByUserId: actorUserId,
         updatedByUserId: actorUserId,
       },
@@ -202,7 +229,10 @@ export const createOrganizationClientForUser = async (
     );
   });
 
-  return sanitizeClient(createdClient, [], true);
+  return {
+    client: sanitizeClient(createdClient, [], true),
+    clientSecret: plainClientSecret,
+  };
 };
 
 export const listOrganizationClientsForUser = async (orgId, actorUserId) => {
@@ -271,6 +301,12 @@ export const updateOrganizationClientForUser = async (
       );
     }
 
+    if (Object.prototype.hasOwnProperty.call(payload, "redirectUris")) {
+      updates.redirectUris = normalizeRedirectUris(payload.redirectUris, {
+        required: true,
+      });
+    }
+
     return updateOrganizationClientById(orgId, clientId, updates, tx);
   });
 
@@ -328,9 +364,6 @@ export const addOrganizationClientProviderForUser = async (
     providerClientId: payload.providerClientId,
     providerClientSecretHash: providerSecretHash,
     providerClientSecretCiphertext: providerSecretCiphertext,
-    providerClientSecretSuffix: extractSecretSuffix(
-      payload.providerClientSecret,
-    ),
     callbackUrl: getProviderCallbackUrl(orgId, client.id, payload.provider),
     isActive: true,
     createdByUserId: actorUserId,
@@ -377,9 +410,6 @@ export const updateOrganizationClientProviderForUser = async (
       payload.providerClientSecret,
     );
     updates.providerClientSecretCiphertext = encryptClientSecret(
-      payload.providerClientSecret,
-    );
-    updates.providerClientSecretSuffix = extractSecretSuffix(
       payload.providerClientSecret,
     );
   }
@@ -432,7 +462,6 @@ export const configureOrganizationClientWebhookForUser = async (
     webhookUrl: payload.webhookUrl,
     webhookSecretHash,
     webhookSecretCiphertext: encryptedWebhookSecret,
-    webhookSecretSuffix: extractSecretSuffix(payload.webhookSecret),
     webhookEnabled: true,
     updatedByUserId: actorUserId,
   });
@@ -444,7 +473,6 @@ export const configureOrganizationClientWebhookForUser = async (
   return {
     webhookEnabled: true,
     webhookUrl: updated.webhookUrl,
-    webhookSecretSuffix: updated.webhookSecretSuffix,
   };
 };
 
@@ -461,7 +489,6 @@ export const disableOrganizationClientWebhookForUser = async (
     webhookUrl: null,
     webhookSecretHash: null,
     webhookSecretCiphertext: null,
-    webhookSecretSuffix: null,
     updatedByUserId: actorUserId,
   });
 
@@ -492,4 +519,51 @@ export const getOrganizationClientWebhookConfigForDispatch = async (
     webhookUrl: config.webhookUrl,
     webhookSecret: decryptClientSecret(config.webhookSecretCiphertext),
   };
+};
+
+export const rotateOrganizationClientSecretForUser = async (
+  orgId,
+  clientId,
+  actorUserId,
+) => {
+  await requireOrganization(orgId);
+  await requireOrganizationManageRole(orgId, actorUserId);
+
+  const plainClientSecret = generatePlatformClientSecret();
+  const clientSecretHash = await hashPassword(plainClientSecret);
+  const clientSecretCiphertext = encryptClientSecret(plainClientSecret);
+
+  const updated = await updateOrganizationClientById(orgId, clientId, {
+    clientSecretHash,
+    clientSecretCiphertext,
+    updatedByUserId: actorUserId,
+  });
+
+  if (!updated) {
+    notFound(CLIENT_ERRORS.CLIENT_NOT_FOUND);
+  }
+
+  return {
+    client: sanitizeClient(
+      updated,
+      await listOrganizationClientProviders(clientId),
+      true,
+    ),
+    clientSecret: plainClientSecret,
+  };
+};
+
+export const listOrganizationClientUsersForUser = async (
+  orgId,
+  clientId,
+  actorUserId,
+  pagination,
+) => {
+  await requireOrganization(orgId);
+  await requireOrganizationManageRole(orgId, actorUserId);
+  await getClientWithProviders(orgId, clientId);
+
+  const users = await listOrganizationClientUsers(orgId, clientId, pagination);
+
+  return users;
 };

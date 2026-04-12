@@ -9,7 +9,9 @@ import {
   deleteOrganizationClientProviderHandler,
   disableOrganizationClientWebhookHandler,
   getOrganizationClientHandler,
+  listOrganizationClientUsersHandler,
   listOrganizationClientsHandler,
+  rotateOrganizationClientSecretHandler,
   updateOrganizationClientHandler,
   updateOrganizationClientProviderHandler,
 } from "./client.controller.js";
@@ -25,6 +27,11 @@ router.get(
   "/:clientId",
   requireAuth,
   asyncHandler(getOrganizationClientHandler),
+);
+router.get(
+  "/:clientId/users",
+  requireAuth,
+  asyncHandler(listOrganizationClientUsersHandler),
 );
 
 router.post(
@@ -44,6 +51,12 @@ router.delete(
   requireAuth,
   organizationClientMutationLimiter,
   asyncHandler(deleteOrganizationClientHandler),
+);
+router.post(
+  "/:clientId/secret/rotate",
+  requireAuth,
+  organizationClientMutationLimiter,
+  asyncHandler(rotateOrganizationClientSecretHandler),
 );
 
 router.post(

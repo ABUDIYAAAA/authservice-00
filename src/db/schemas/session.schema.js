@@ -10,6 +10,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { organizations } from "./organization.schema.js";
+import { organizationClients } from "./organization-client.schema.js";
 import { users } from "./user.schema.js";
 
 export const sessions = pgTable(
@@ -22,6 +23,9 @@ export const sessions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     orgId: uuid("org_id").references(() => organizations.id, {
+      onDelete: "set null",
+    }),
+    clientId: uuid("client_id").references(() => organizationClients.id, {
       onDelete: "set null",
     }),
     deviceId: varchar("device_id", { length: 255 }),
@@ -39,6 +43,7 @@ export const sessions = pgTable(
   },
   (table) => ({
     sessionsUserIdIdx: index("idx_sessions_user_id").on(table.userId),
+    sessionsClientIdIdx: index("idx_sessions_client_id").on(table.clientId),
     sessionsDeviceIdIdx: index("idx_sessions_device_id").on(table.deviceId),
     sessionsExpiryIdx: index("idx_sessions_expires_at").on(table.expiresAt),
   }),
@@ -99,5 +104,9 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
   organization: one(organizations, {
     fields: [sessions.orgId],
     references: [organizations.id],
+  }),
+  client: one(organizationClients, {
+    fields: [sessions.clientId],
+    references: [organizationClients.id],
   }),
 }));

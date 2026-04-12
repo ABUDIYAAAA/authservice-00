@@ -72,7 +72,6 @@ export const OPENAPI_COMPONENTS = {
       properties: {
         email: { type: "string", format: "email" },
         password: { type: "string" },
-        orgId: { type: "string", format: "uuid" },
       },
     },
     AuthResponse: {
@@ -219,7 +218,6 @@ export const OPENAPI_COMPONENTS = {
         isActive: { type: "boolean" },
         secretConfigured: { type: "boolean" },
         providerClientId: { type: "string", nullable: true },
-        providerClientSecretSuffix: { type: "string", nullable: true },
         createdAt: { type: "string", format: "date-time" },
         updatedAt: { type: "string", format: "date-time" },
       },
@@ -230,6 +228,10 @@ export const OPENAPI_COMPONENTS = {
         id: { type: "string", format: "uuid" },
         orgId: { type: "string", format: "uuid" },
         name: { type: "string" },
+        redirectUris: {
+          type: "array",
+          items: { type: "string", format: "uri" },
+        },
         authorizedOrigins: {
           type: "array",
           items: { type: "string", format: "uri" },
@@ -238,6 +240,9 @@ export const OPENAPI_COMPONENTS = {
         updatedByUserId: { type: "string", format: "uuid", nullable: true },
         createdAt: { type: "string", format: "date-time" },
         updatedAt: { type: "string", format: "date-time" },
+        clientSecretConfigured: { type: "boolean" },
+        webhookEnabled: { type: "boolean" },
+        webhookUrl: { type: "string", format: "uri", nullable: true },
         providers: {
           type: "array",
           items: { $ref: "#/components/schemas/OrganizationClientProvider" },
@@ -246,9 +251,14 @@ export const OPENAPI_COMPONENTS = {
     },
     CreateOrganizationClientRequest: {
       type: "object",
-      required: ["name"],
+      required: ["name", "redirectUris"],
       properties: {
         name: { type: "string", minLength: 2, maxLength: 255 },
+        redirectUris: {
+          type: "array",
+          minItems: 1,
+          items: { type: "string", format: "uri" },
+        },
         authorizedOrigins: {
           type: "array",
           items: { type: "string", format: "uri" },
@@ -260,6 +270,11 @@ export const OPENAPI_COMPONENTS = {
       type: "object",
       properties: {
         name: { type: "string", minLength: 2, maxLength: 255 },
+        redirectUris: {
+          type: "array",
+          minItems: 1,
+          items: { type: "string", format: "uri" },
+        },
         authorizedOrigins: {
           type: "array",
           items: { type: "string", format: "uri" },
@@ -296,7 +311,45 @@ export const OPENAPI_COMPONENTS = {
       properties: {
         webhookEnabled: { type: "boolean" },
         webhookUrl: { type: "string", format: "uri" },
-        webhookSecretSuffix: { type: "string", nullable: true },
+      },
+    },
+    OrganizationClientSecretResponse: {
+      type: "object",
+      properties: {
+        message: { type: "string" },
+        client: { $ref: "#/components/schemas/OrganizationClient" },
+        clientSecret: { type: "string" },
+      },
+    },
+    OrganizationClientUser: {
+      type: "object",
+      properties: {
+        userId: { type: "string", format: "uuid" },
+        email: { type: "string", format: "email" },
+        name: { type: "string", nullable: true },
+        avatarUrl: { type: "string", format: "uri", nullable: true },
+        emailVerified: { type: "boolean" },
+        lastLoginAt: { type: "string", format: "date-time", nullable: true },
+        firstSignedInAt: { type: "string", format: "date-time" },
+        lastSignedInAt: { type: "string", format: "date-time" },
+        linkedAt: { type: "string", format: "date-time" },
+      },
+    },
+    OrganizationClientUsersResponse: {
+      type: "object",
+      properties: {
+        users: {
+          type: "array",
+          items: { $ref: "#/components/schemas/OrganizationClientUser" },
+        },
+        pagination: {
+          type: "object",
+          properties: {
+            limit: { type: "integer" },
+            offset: { type: "integer" },
+            count: { type: "integer" },
+          },
+        },
       },
     },
     ConfirmOrganizationOauthChallengeRequest: {

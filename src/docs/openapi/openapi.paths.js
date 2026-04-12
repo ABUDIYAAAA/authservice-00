@@ -624,10 +624,7 @@ export const OPENAPI_PATH_DEFINITIONS = {
         201: jsonObjectResponse(
           OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_CREATED,
           {
-            type: "object",
-            properties: {
-              client: { $ref: "#/components/schemas/OrganizationClient" },
-            },
+            $ref: "#/components/schemas/OrganizationClientSecretResponse",
           },
         ),
         400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
@@ -744,6 +741,78 @@ export const OPENAPI_PATH_DEFINITIONS = {
               message: { type: "string" },
             },
           },
+        ),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization or client not found" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.ORGANIZATION_CLIENT_USERS]: {
+    get: {
+      summary: "List users visible to an organization client",
+      tags: [OPENAPI_TAGS.CLIENTS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "query",
+          name: "limit",
+          required: false,
+          schema: { type: "integer", minimum: 1, maximum: 200, default: 50 },
+        },
+        {
+          in: "query",
+          name: "offset",
+          required: false,
+          schema: { type: "integer", minimum: 0, default: 0 },
+        },
+      ],
+      responses: {
+        200: jsonRefResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_USERS,
+          "#/components/schemas/OrganizationClientUsersResponse",
+        ),
+        401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
+        403: { description: "Forbidden" },
+        404: { description: "Organization or client not found" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.ORGANIZATION_CLIENT_SECRET_ROTATE]: {
+    post: {
+      summary: "Rotate organization client secret",
+      tags: [OPENAPI_TAGS.CLIENTS],
+      security: OPENAPI_SECURITY.AUTHENTICATED,
+      parameters: [
+        {
+          in: "path",
+          name: "orgId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "path",
+          name: "clientId",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonRefResponse(
+          OPENAPI_DESCRIPTIONS.ORGANIZATION_CLIENT_SECRET_ROTATED,
+          "#/components/schemas/OrganizationClientSecretResponse",
         ),
         401: { description: OPENAPI_DESCRIPTIONS.UNAUTHORIZED },
         403: { description: "Forbidden" },

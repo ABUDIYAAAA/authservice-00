@@ -13,13 +13,14 @@ export const sessionExpiryDate = () => {
 };
 
 export const createUserSession = async (
-  { userId, orgId, deviceId, userAgent, ipAddress },
+  { userId, orgId, clientId, deviceId, userAgent, ipAddress },
   tx,
 ) => {
   return createSession(
     {
       userId,
       orgId,
+      clientId: clientId || null,
       deviceId,
       userAgent,
       ipAddress,

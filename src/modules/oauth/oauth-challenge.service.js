@@ -1,41 +1,11 @@
 import crypto from "node:crypto";
+import db from "../../db/client/db.js";
 import env from "../../core/config/config.js";
-import { getRedisClient } from "../../core/config/redis.js";
-
-const REQUIRED_CONFIRMATION_KEY_PREFIX = "oauth:confirm:required";
-const CHALLENGE_KEY_PREFIX = "oauth:confirm:challenge";
-
-const requiredKey = ({ orgId, clientId, userId }) => {
-  return `${REQUIRED_CONFIRMATION_KEY_PREFIX}:${orgId}:${clientId}:${userId}`;
-};
-
-const challengeKey = (challengeToken) => {
-  return `${CHALLENGE_KEY_PREFIX}:${challengeToken}`;
-};
-
-const consumeKey = async (key) => {
-  const value = await getRedisClient().eval(
-    `
-      local current = redis.call('GET', KEYS[1])
-      if current then
-        redis.call('DEL', KEYS[1])
-      end
-      return current
-    `,
-    1,
-    key,
-  );
-
-  if (!value) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-};
+import {
+  oauthReloginChallenges,
+  oauthReloginRequirements,
+} from "../../db/schemas/index.js";
+import { and, eq, gt } from "drizzle-orm";
 
 export const setReloginConfirmationRequirement = async ({
   orgId,
@@ -43,18 +13,30 @@ export const setReloginConfirmationRequirement = async ({
   userId,
   clientContext,
 }) => {
-  await getRedisClient().set(
-    requiredKey({ orgId, clientId, userId }),
-    JSON.stringify({
+  const expiresAt = new Date(
+    Date.now() + env.OAUTH_RELOGIN_REQUIREMENT_TTL_SECONDS * 1000,
+  );
+
+  await db
+    .insert(oauthReloginRequirements)
+    .values({
       orgId,
       clientId,
       userId,
       clientContext: clientContext || null,
-      createdAt: new Date().toISOString(),
-    }),
-    "EX",
-    env.OAUTH_RELOGIN_REQUIREMENT_TTL_SECONDS,
-  );
+      expiresAt,
+    })
+    .onConflictDoUpdate({
+      target: [
+        oauthReloginRequirements.orgId,
+        oauthReloginRequirements.clientId,
+        oauthReloginRequirements.userId,
+      ],
+      set: {
+        clientContext: clientContext || null,
+        expiresAt,
+      },
+    });
 };
 
 export const consumeReloginConfirmationRequirement = async ({
@@ -62,25 +44,53 @@ export const consumeReloginConfirmationRequirement = async ({
   clientId,
   userId,
 }) => {
-  return consumeKey(requiredKey({ orgId, clientId, userId }));
+  const [row] = await db
+    .delete(oauthReloginRequirements)
+    .where(
+      and(
+        eq(oauthReloginRequirements.orgId, orgId),
+        eq(oauthReloginRequirements.clientId, clientId),
+        eq(oauthReloginRequirements.userId, userId),
+        gt(oauthReloginRequirements.expiresAt, new Date()),
+      ),
+    )
+    .returning();
+
+  return row || null;
 };
 
 export const createReloginChallenge = async (payload) => {
   const token = crypto.randomBytes(32).toString("base64url");
-
-  await getRedisClient().set(
-    challengeKey(token),
-    JSON.stringify({
-      ...payload,
-      createdAt: new Date().toISOString(),
-    }),
-    "EX",
-    env.OAUTH_RELOGIN_CHALLENGE_TTL_SECONDS,
+  const expiresAt = new Date(
+    Date.now() + env.OAUTH_RELOGIN_CHALLENGE_TTL_SECONDS * 1000,
   );
+
+  await db.insert(oauthReloginChallenges).values({
+    token,
+    userId: payload.userId,
+    sessionId: payload.sessionId,
+    sessionVersion: payload.sessionVersion,
+    orgId: payload.orgId,
+    clientId: payload.clientId,
+    flowType: payload.flowType,
+    clientContext: payload.clientContext || null,
+    redirectTo: payload.redirectTo,
+    expiresAt,
+  });
 
   return token;
 };
 
 export const consumeReloginChallenge = async (token) => {
-  return consumeKey(challengeKey(token));
+  const [row] = await db
+    .delete(oauthReloginChallenges)
+    .where(
+      and(
+        eq(oauthReloginChallenges.token, token),
+        gt(oauthReloginChallenges.expiresAt, new Date()),
+      ),
+    )
+    .returning();
+
+  return row || null;
 };

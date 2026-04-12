@@ -2,6 +2,8 @@ import { Worker } from "bullmq";
 import db from "../db/client/db.js";
 import {
   emailVerificationTokens,
+  oauthReloginChallenges,
+  oauthReloginRequirements,
   organizationInvites,
   passwordResetTokens,
   sessions,
@@ -40,6 +42,12 @@ const cleanupWorker = new Worker(
       db
         .delete(organizationInvites)
         .where(lte(organizationInvites.expiresAt, now)),
+      db
+        .delete(oauthReloginRequirements)
+        .where(lte(oauthReloginRequirements.expiresAt, now)),
+      db
+        .delete(oauthReloginChallenges)
+        .where(lte(oauthReloginChallenges.expiresAt, now)),
     ]);
 
     logger.info("Cleanup job finished");

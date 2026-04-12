@@ -46,3 +46,18 @@ export const consumeOauthState = async (stateToken) => {
     return null;
   }
 };
+
+export const readOauthState = async (stateToken) => {
+  const key = getStateKey(stateToken);
+  const value = await getRedisClient().get(key);
+
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};

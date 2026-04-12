@@ -26,18 +26,26 @@ import {
 } from "./oauth.constants.js";
 import {
   findActiveOrganizationClientProvider,
+  findOrganizationClientByClientId,
   findOrganizationClientById,
   listActiveOrganizationClientProviders,
   upsertOrganizationClientUser,
 } from "../client/client.repository.js";
 import { decryptClientSecret } from "../client/client-secret-crypto.js";
-import { createOauthState, consumeOauthState } from "./oauth-state.service.js";
+import {
+  createOauthState,
+  consumeOauthState,
+  readOauthState,
+} from "./oauth-state.service.js";
 import {
   consumeReloginChallenge,
   consumeReloginConfirmationRequirement,
   createReloginChallenge,
 } from "./oauth-challenge.service.js";
 import { findSession } from "../auth/session.service.js";
+
+const OIDC_AUTHORIZE_REQUEST_TYPE = "oidc_authorize_request";
+const OIDC_FRONTEND_AUTHORIZE_PATH = "/authorize";
 
 const getProviderAuthorizationUrl = (provider, credentials = {}) => {
   if (provider === OAUTH_PROVIDERS.GOOGLE) {
@@ -113,6 +121,36 @@ const validateReturnTo = (returnTo, redirectUris) => {
   }
 
   return normalizedReturnTo;
+};
+
+const validateClientRedirectUri = (redirectUri, redirectUris) => {
+  let normalizedRedirectUri;
+
+  try {
+    normalizedRedirectUri = new URL(redirectUri).toString();
+  } catch {
+    throw new AppError(OAUTH_ERRORS.INVALID_REDIRECT_URI, 400, {
+      code: OAUTH_ERROR_CODES.INVALID_REDIRECT_URI,
+    });
+  }
+
+  const allowedRedirectUris = Array.isArray(redirectUris) ? redirectUris : [];
+  if (!allowedRedirectUris.includes(normalizedRedirectUri)) {
+    throw new AppError(OAUTH_ERRORS.INVALID_REDIRECT_URI, 400, {
+      code: OAUTH_ERROR_CODES.INVALID_REDIRECT_URI,
+      details: {
+        redirectUri: normalizedRedirectUri,
+      },
+    });
+  }
+
+  return normalizedRedirectUri;
+};
+
+const buildFrontendAuthorizeRedirectUrl = (requestToken) => {
+  const url = new URL(OIDC_FRONTEND_AUTHORIZE_PATH, env.FRONTEND_URL);
+  url.searchParams.set("request", requestToken);
+  return url.toString();
 };
 
 const resolveClientOauthProviderConfig = async (orgId, clientId, provider) => {
@@ -207,6 +245,118 @@ const completeOauthAuthSession = async ({
   };
 };
 
+export const startOidcAuthorize = async ({
+  responseType,
+  clientId,
+  redirectUri,
+  scope,
+  state,
+  nonce,
+}) => {
+  if (responseType !== "code") {
+    throw new AppError(OAUTH_ERRORS.INVALID_RESPONSE_TYPE, 400, {
+      code: OAUTH_ERROR_CODES.INVALID_RESPONSE_TYPE,
+    });
+  }
+
+  const client = await findOrganizationClientByClientId(clientId);
+  if (!client) {
+    throw new AppError(OAUTH_ERRORS.INVALID_CLIENT, 404, {
+      code: OAUTH_ERROR_CODES.INVALID_CLIENT,
+    });
+  }
+
+  const normalizedRedirectUri = validateClientRedirectUri(
+    redirectUri,
+    client.redirectUris,
+  );
+
+  const requestToken = await createOauthState({
+    type: OIDC_AUTHORIZE_REQUEST_TYPE,
+    responseType,
+    clientId: client.id,
+    orgId: client.orgId,
+    redirectUri: normalizedRedirectUri,
+    scope,
+    state,
+    nonce,
+  });
+
+  return {
+    requestToken,
+    redirectUrl: buildFrontendAuthorizeRedirectUrl(requestToken),
+  };
+};
+
+export const getOidcAuthorizeInitiation = async ({ requestToken }) => {
+  const request = await readOauthState(requestToken);
+  if (!request || request.type !== OIDC_AUTHORIZE_REQUEST_TYPE) {
+    throw new AppError(OAUTH_ERRORS.INVALID_REQUEST_REFERENCE, 400, {
+      code: OAUTH_ERROR_CODES.INVALID_REQUEST_REFERENCE,
+    });
+  }
+
+  const client = await findOrganizationClientById(
+    request.orgId,
+    request.clientId,
+  );
+  if (!client) {
+    throw new AppError(OAUTH_ERRORS.INVALID_CLIENT, 404, {
+      code: OAUTH_ERROR_CODES.INVALID_CLIENT,
+    });
+  }
+
+  const normalizedRedirectUri = validateClientRedirectUri(
+    request.redirectUri,
+    client.redirectUris,
+  );
+
+  const providers = await listActiveOrganizationClientProviders(
+    client.orgId,
+    client.id,
+  );
+
+  const providerLinks = await Promise.all(
+    providers.map(async (entry) => {
+      const start = await getOrganizationClientOauthStart({
+        orgId: client.orgId,
+        clientId: client.id,
+        provider: entry.provider,
+        returnTo: normalizedRedirectUri,
+        flowType: OAUTH_FLOW_TYPES.SIGNIN,
+        oidcContext: {
+          responseType: request.responseType,
+          scope: request.scope,
+          state: request.state,
+          nonce: request.nonce,
+        },
+      });
+
+      return {
+        provider: entry.provider,
+        authorizationUrl: start.redirectUrl,
+      };
+    }),
+  );
+
+  return {
+    client: {
+      id: client.id,
+      orgId: client.orgId,
+      name: client.name,
+    },
+    request: {
+      responseType: request.responseType,
+      clientId: client.id,
+      redirectUri: normalizedRedirectUri,
+      scope: request.scope,
+      state: request.state,
+      nonce: request.nonce,
+    },
+    providers: providerLinks,
+  };
+};
+
 export const listOrganizationClientOauthProviders = async ({
   orgId,
   clientId,
@@ -243,6 +393,7 @@ export const getOrganizationClientOauthStart = async ({
   returnTo,
   flowType = OAUTH_FLOW_TYPES.SIGNIN,
   clientContext,
+  oidcContext,
 }) => {
   const providerConfig = await resolveClientOauthProviderConfig(
     orgId,
@@ -262,12 +413,18 @@ export const getOrganizationClientOauthStart = async ({
     returnTo: normalizedReturnTo,
     flowType,
     clientContext: clientContext || null,
+    oidcContext: oidcContext || null,
   });
 
   const redirectUrl = getProviderAuthorizationUrl(provider, {
     clientId: providerConfig.providerClientId,
     redirectUri: providerConfig.callbackUrl,
     state: stateToken,
+    nonce: oidcContext?.nonce,
+    scope:
+      provider === OAUTH_PROVIDERS.GOOGLE && Array.isArray(oidcContext?.scope)
+        ? oidcContext.scope.join(" ")
+        : undefined,
   });
 
   return {

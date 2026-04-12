@@ -1147,6 +1147,79 @@ export const OPENAPI_PATH_DEFINITIONS = {
       },
     },
   },
+  [OPENAPI_PATHS.OAUTH_AUTHORIZE]: {
+    get: {
+      summary:
+        "Validate OIDC authorize request and redirect to frontend initiation page",
+      tags: [OPENAPI_TAGS.SSO],
+      parameters: [
+        {
+          in: "query",
+          name: "response_type",
+          required: true,
+          schema: { type: "string", enum: ["code"] },
+        },
+        {
+          in: "query",
+          name: "client_id",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          in: "query",
+          name: "redirect_uri",
+          required: true,
+          schema: { type: "string", format: "uri" },
+        },
+        {
+          in: "query",
+          name: "scope",
+          required: true,
+          schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "state",
+          required: false,
+          schema: { type: "string" },
+        },
+        {
+          in: "query",
+          name: "nonce",
+          required: false,
+          schema: { type: "string" },
+        },
+      ],
+      responses: {
+        302: { description: OPENAPI_DESCRIPTIONS.OAUTH_AUTHORIZE },
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        404: { description: "Client not found" },
+      },
+    },
+  },
+  [OPENAPI_PATHS.OAUTH_AUTHORIZE_INIT]: {
+    get: {
+      summary:
+        "Return configured providers and generated authorization URLs for OIDC initiation",
+      tags: [OPENAPI_TAGS.SSO],
+      parameters: [
+        {
+          in: "query",
+          name: "request",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      responses: {
+        200: jsonRefResponse(
+          OPENAPI_DESCRIPTIONS.OAUTH_AUTHORIZE_INIT,
+          "#/components/schemas/OidcAuthorizeInitResponse",
+        ),
+        400: { description: OPENAPI_DESCRIPTIONS.INVALID_INPUT },
+        404: { description: "Client not found" },
+      },
+    },
+  },
   [OPENAPI_PATHS.OAUTH_GOOGLE]: {
     get: {
       summary: "Start Google OAuth authorization flow",
@@ -1204,7 +1277,7 @@ export const OPENAPI_PATH_DEFINITIONS = {
   [OPENAPI_PATHS.OAUTH_ORG_CLIENT_PROVIDERS]: {
     get: {
       summary: "List configured OAuth providers for an organization client",
-      tags: [OPENAPI_TAGS.OAUTH],
+      tags: [OPENAPI_TAGS.SSO],
       parameters: [
         {
           in: "path",
@@ -1250,7 +1323,7 @@ export const OPENAPI_PATH_DEFINITIONS = {
   [OPENAPI_PATHS.OAUTH_ORG_CLIENT_START]: {
     get: {
       summary: "Start organization client OAuth flow",
-      tags: [OPENAPI_TAGS.OAUTH],
+      tags: [OPENAPI_TAGS.SSO],
       parameters: [
         {
           in: "path",
@@ -1293,7 +1366,7 @@ export const OPENAPI_PATH_DEFINITIONS = {
   [OPENAPI_PATHS.OAUTH_ORG_CLIENT_CALLBACK]: {
     get: {
       summary: "Handle organization client OAuth callback",
-      tags: [OPENAPI_TAGS.OAUTH],
+      tags: [OPENAPI_TAGS.SSO],
       parameters: [
         {
           in: "path",
@@ -1335,7 +1408,7 @@ export const OPENAPI_PATH_DEFINITIONS = {
   [OPENAPI_PATHS.OAUTH_ORG_CLIENT_CONFIRM]: {
     post: {
       summary: "Confirm relogin challenge for organization OAuth flow",
-      tags: [OPENAPI_TAGS.OAUTH],
+      tags: [OPENAPI_TAGS.SSO],
       requestBody: {
         required: true,
         content: {

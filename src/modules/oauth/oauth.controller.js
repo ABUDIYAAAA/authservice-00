@@ -16,10 +16,12 @@ import {
 import { buildRequestDevice } from "../auth/device.service.js";
 import {
   getOrganizationClientOauthStart,
+  getOidcAuthorizeInitiation,
   handleOauthCallback,
   handleOrganizationClientOauthCallback,
   getOauthStartUrl,
   listOrganizationClientOauthProviders,
+  startOidcAuthorize,
 } from "./oauth.service.js";
 import {
   OAUTH_CALLBACK_QUERY_CODE,
@@ -30,6 +32,8 @@ import { COOKIE_NAMES } from "../../core/constants/cookie.constants.js";
 import { AUDIT_MESSAGES } from "../audit/audit.messages.js";
 import {
   confirmOrganizationOauthChallengeSchema,
+  oidcAuthorizeInitQuerySchema,
+  oidcAuthorizeQuerySchema,
   organizationOauthCallbackQuerySchema,
   organizationOauthParamSchema,
   organizationOauthProvidersParamSchema,
@@ -57,6 +61,60 @@ const setAuthCookies = (res, tokens, deviceInfo = null) => {
       deviceCookieOptions,
     );
   }
+};
+
+export const oidcAuthorizeHandler = async (req, res) => {
+  const query = oidcAuthorizeQuerySchema.parse(req.query);
+  const auditContext = buildAuditContextFromRequest(req);
+
+  const result = await startOidcAuthorize({
+    responseType: query.response_type,
+    clientId: query.client_id,
+    redirectUri: query.redirect_uri,
+    scope: query.scope,
+    state: query.state,
+    nonce: query.nonce,
+  });
+
+  await emitAuditEvent({
+    ...auditContext,
+    event: AUDIT_EVENTS.OAUTH_START,
+    category: AUDIT_CATEGORY.OAUTH,
+    status: AUDIT_STATUS.SUCCESS,
+    message: AUDIT_MESSAGES.OAUTH_START,
+    metadata: {
+      clientId: query.client_id,
+      responseType: query.response_type,
+      redirectUri: query.redirect_uri,
+    },
+  });
+
+  res.redirect(result.redirectUrl);
+};
+
+export const oidcAuthorizeInitHandler = async (req, res) => {
+  const query = oidcAuthorizeInitQuerySchema.parse(req.query);
+  const auditContext = buildAuditContextFromRequest(req);
+
+  const result = await getOidcAuthorizeInitiation({
+    requestToken: query.request,
+  });
+
+  await emitAuditEvent({
+    ...auditContext,
+    event: AUDIT_EVENTS.OAUTH_START,
+    category: AUDIT_CATEGORY.OAUTH,
+    status: AUDIT_STATUS.SUCCESS,
+    orgId: result.client.orgId,
+    message: AUDIT_MESSAGES.OAUTH_START,
+    metadata: {
+      clientId: result.client.id,
+      providers: result.providers.length,
+      initiation: "oidc",
+    },
+  });
+
+  res.status(200).json(result);
 };
 
 export const oauthStartHandler = async (req, res) => {

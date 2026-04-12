@@ -4,6 +4,17 @@ import {
   OAUTH_PROVIDERS,
 } from "../../modules/oauth/oauth.constants.js";
 
+const OIDC_ALLOWED_SCOPES = ["openid", "profile", "email"];
+
+const normalizeScope = (scopeValue) => {
+  const normalized = String(scopeValue || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return Array.from(new Set(normalized));
+};
+
 const oauthProviderSchema = z.enum([
   OAUTH_PROVIDERS.GOOGLE,
   OAUTH_PROVIDERS.GITHUB,
@@ -35,4 +46,30 @@ export const organizationOauthCallbackQuerySchema = z.object({
 
 export const confirmOrganizationOauthChallengeSchema = z.object({
   challengeToken: z.string().trim().min(20).max(500),
+});
+
+export const oidcAuthorizeQuerySchema = z.object({
+  response_type: z.literal("code"),
+  client_id: z.string().uuid(),
+  redirect_uri: z.string().url(),
+  scope: z
+    .string()
+    .trim()
+    .min(1)
+    .transform((value) => normalizeScope(value))
+    .refine((scopes) => scopes.includes("openid"), {
+      message: "scope must include openid",
+    })
+    .refine(
+      (scopes) => scopes.every((scope) => OIDC_ALLOWED_SCOPES.includes(scope)),
+      {
+        message: "scope contains unsupported values",
+      },
+    ),
+  state: z.string().trim().min(8).max(500).optional(),
+  nonce: z.string().trim().min(8).max(500).optional(),
+});
+
+export const oidcAuthorizeInitQuerySchema = z.object({
+  request: z.string().trim().min(20).max(500),
 });

@@ -47,6 +47,10 @@ const spec = {
       name: OPENAPI_TAGS.CLIENTS,
       description: "Organization OAuth client and provider configuration",
     },
+    {
+      name: OPENAPI_TAGS.SSO,
+      description: "OIDC and organization SSO initiation flows",
+    },
     { name: OPENAPI_TAGS.OAUTH, description: "OAuth provider integrations" },
   ],
   components: {

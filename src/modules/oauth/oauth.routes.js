@@ -3,6 +3,8 @@ import asyncHandler from "../../utils/async-handler.js";
 import {
   confirmOrganizationOauthChallengeHandler,
   listOrganizationOauthProvidersHandler,
+  oidcAuthorizeHandler,
+  oidcAuthorizeInitHandler,
   oauthCallbackHandler,
   oauthStartHandler,
   organizationOauthCallbackHandler,
@@ -11,6 +13,12 @@ import {
 import { OAUTH_PROVIDERS, OAUTH_ROUTE_PATHS } from "./oauth.constants.js";
 
 const router = Router();
+
+router.get(OAUTH_ROUTE_PATHS.AUTHORIZE, asyncHandler(oidcAuthorizeHandler));
+router.get(
+  OAUTH_ROUTE_PATHS.AUTHORIZE_INIT,
+  asyncHandler(oidcAuthorizeInitHandler),
+);
 
 router.get(
   OAUTH_ROUTE_PATHS.ORG_CLIENT_PROVIDERS,

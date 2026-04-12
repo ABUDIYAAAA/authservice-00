@@ -3,6 +3,7 @@ export const OPENAPI_TAGS = {
   USERS: "Users",
   ORGANIZATIONS: "Organizations",
   CLIENTS: "Clients",
+  SSO: "SSO",
   OAUTH: "OAuth",
 };
 
@@ -51,6 +52,9 @@ export const OPENAPI_DESCRIPTIONS = {
   ORGANIZATION_CLIENT_SECRET_ROTATED: "Organization client secret rotated",
   ORGANIZATION_CLIENT_USERS: "Organization client users",
   OAUTH_CLIENT_PROVIDERS: "Configured OAuth providers for client",
+  OAUTH_AUTHORIZE: "Validate OIDC authorize request and redirect to frontend",
+  OAUTH_AUTHORIZE_INIT:
+    "Fetch configured providers and authorization URLs for OIDC initiation",
   OAUTH_ORG_CLIENT_START: "Redirect to org-client provider authorization page",
   OAUTH_ORG_CLIENT_CALLBACK:
     "Handle org-client OAuth callback and continue auth flow",
@@ -105,6 +109,8 @@ export const OPENAPI_PATHS = {
   OAUTH_GOOGLE_CALLBACK: "/api/oauth/google/callback",
   OAUTH_GITHUB: "/api/oauth/github",
   OAUTH_GITHUB_CALLBACK: "/api/oauth/github/callback",
+  OAUTH_AUTHORIZE: "/api/oauth/authorize",
+  OAUTH_AUTHORIZE_INIT: "/api/oauth/authorize/init",
   OAUTH_ORG_CLIENT_PROVIDERS:
     "/api/oauth/orgs/{orgId}/clients/{clientId}/providers",
   OAUTH_ORG_CLIENT_START:

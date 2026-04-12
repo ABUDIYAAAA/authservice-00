@@ -360,6 +360,55 @@ export const OPENAPI_COMPONENTS = {
         challengeToken: { type: "string" },
       },
     },
+    OidcAuthorizeRequestQuery: {
+      type: "object",
+      required: ["response_type", "client_id", "redirect_uri", "scope"],
+      properties: {
+        response_type: { type: "string", enum: ["code"] },
+        client_id: { type: "string", format: "uuid" },
+        redirect_uri: { type: "string", format: "uri" },
+        scope: { type: "string", example: "openid profile email" },
+        state: { type: "string" },
+        nonce: { type: "string" },
+      },
+    },
+    OidcAuthorizeInitResponse: {
+      type: "object",
+      properties: {
+        client: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            orgId: { type: "string", format: "uuid" },
+            name: { type: "string" },
+          },
+        },
+        request: {
+          type: "object",
+          properties: {
+            responseType: { type: "string", enum: ["code"] },
+            clientId: { type: "string", format: "uuid" },
+            redirectUri: { type: "string", format: "uri" },
+            scope: {
+              type: "array",
+              items: { type: "string", enum: ["openid", "profile", "email"] },
+            },
+            state: { type: "string" },
+            nonce: { type: "string" },
+          },
+        },
+        providers: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              provider: { type: "string", enum: ["google", "github"] },
+              authorizationUrl: { type: "string", format: "uri" },
+            },
+          },
+        },
+      },
+    },
     OrganizationListResponse: {
       type: "object",
       properties: {

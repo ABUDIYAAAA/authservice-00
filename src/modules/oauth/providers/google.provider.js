@@ -18,13 +18,17 @@ export const getGoogleAuthorizationUrl = (overrides = {}) => {
     client_id: credentials.clientId,
     redirect_uri: credentials.redirectUri,
     response_type: "code",
-    scope: GOOGLE_PROVIDER.scope,
+    scope: overrides.scope || GOOGLE_PROVIDER.scope,
     access_type: GOOGLE_PROVIDER.accessType,
     prompt: GOOGLE_PROVIDER.prompt,
   });
 
   if (overrides.state) {
     params.set("state", overrides.state);
+  }
+
+  if (overrides.nonce) {
+    params.set("nonce", overrides.nonce);
   }
 
   return `${GOOGLE_PROVIDER.authUrl}?${params.toString()}`;

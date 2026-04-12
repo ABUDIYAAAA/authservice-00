@@ -31,6 +31,16 @@ export const findOrganizationClientById = async (orgId, clientId, tx = db) => {
   return client || null;
 };
 
+export const findOrganizationClientByClientId = async (clientId, tx = db) => {
+  const [client] = await tx
+    .select()
+    .from(organizationClients)
+    .where(eq(organizationClients.id, clientId))
+    .limit(1);
+
+  return client || null;
+};
+
 export const findOrganizationClientByNormalizedName = async (
   orgId,
   normalizedName,

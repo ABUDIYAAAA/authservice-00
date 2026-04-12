@@ -15,7 +15,9 @@
     "/health": {
       "get": {
         "summary": "Service health check",
-        "tags": ["Health"],
+        "tags": [
+          "Health"
+        ],
         "responses": {
           "200": {
             "description": "Service is healthy",
@@ -46,7 +48,9 @@
     "/api/auth/signup": {
       "post": {
         "summary": "Register a new user account",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -87,7 +91,9 @@
     "/api/auth/login": {
       "post": {
         "summary": "Sign in with email and password",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -118,7 +124,9 @@
     "/api/auth/logout": {
       "post": {
         "summary": "Logout current session",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -140,7 +148,9 @@
     "/api/auth/refresh": {
       "post": {
         "summary": "Refresh access token using refresh cookie",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "responses": {
           "200": {
             "description": "Token refreshed",
@@ -161,7 +171,9 @@
     "/api/auth/verify-email/{token}": {
       "get": {
         "summary": "Verify user email by one-time token",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -185,14 +197,18 @@
     "/api/auth/resend-verification": {
       "post": {
         "summary": "Resend verification email",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email"],
+                "required": [
+                  "email"
+                ],
                 "properties": {
                   "email": {
                     "type": "string",
@@ -213,14 +229,18 @@
     "/api/auth/forgot-password": {
       "post": {
         "summary": "Request password reset link",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email"],
+                "required": [
+                  "email"
+                ],
                 "properties": {
                   "email": {
                     "type": "string",
@@ -241,14 +261,19 @@
     "/api/auth/reset-password": {
       "post": {
         "summary": "Reset account password with one-time token",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["token", "password"],
+                "required": [
+                  "token",
+                  "password"
+                ],
                 "properties": {
                   "token": {
                     "type": "string"
@@ -275,7 +300,9 @@
     "/api/auth/sessions": {
       "get": {
         "summary": "List active sessions for current user",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -304,7 +331,9 @@
     "/api/auth/sessions/{id}": {
       "delete": {
         "summary": "Revoke a specific session for current user",
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -337,7 +366,9 @@
     "/api/users/me": {
       "get": {
         "summary": "Get current authenticated user profile",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -369,7 +400,9 @@
       },
       "patch": {
         "summary": "Update current user profile",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -423,7 +456,9 @@
       },
       "delete": {
         "summary": "Delete current user account",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -445,7 +480,9 @@
     "/api/organizations": {
       "post": {
         "summary": "Create a new organization",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -496,7 +533,9 @@
       },
       "get": {
         "summary": "List organizations for current user",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -525,7 +564,9 @@
     "/api/organizations/{orgId}": {
       "get": {
         "summary": "Get organization details for a collaborator",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -569,7 +610,9 @@
       },
       "patch": {
         "summary": "Update organization metadata",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -634,7 +677,9 @@
       },
       "delete": {
         "summary": "Delete organization (owner only)",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -673,7 +718,9 @@
     "/api/organizations/{orgId}/invites": {
       "post": {
         "summary": "Invite a collaborator to organization",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -741,7 +788,9 @@
       },
       "get": {
         "summary": "List organization invites",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -795,7 +844,9 @@
     "/api/organizations/{orgId}/invites/{inviteId}": {
       "delete": {
         "summary": "Revoke organization invite",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -861,7 +912,9 @@
     "/api/organizations/{orgId}/members/{userId}/role": {
       "patch": {
         "summary": "Update organization member role (owner only)",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -932,7 +985,9 @@
     "/api/organizations/{orgId}/transfer-ownership": {
       "post": {
         "summary": "Transfer organization ownership to another member",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -994,7 +1049,9 @@
     "/api/organizations/{orgId}/clients": {
       "get": {
         "summary": "List organization OAuth clients",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1046,7 +1103,9 @@
       },
       "post": {
         "summary": "Create organization OAuth client",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1108,7 +1167,9 @@
     "/api/organizations/{orgId}/clients/{clientId}": {
       "get": {
         "summary": "Get organization OAuth client details",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1166,7 +1227,9 @@
       },
       "patch": {
         "summary": "Update organization OAuth client",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1240,7 +1303,9 @@
       },
       "delete": {
         "summary": "Delete organization OAuth client",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1300,7 +1365,9 @@
     "/api/organizations/{orgId}/clients/{clientId}/users": {
       "get": {
         "summary": "List users visible to an organization client",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1376,7 +1443,9 @@
     "/api/organizations/{orgId}/clients/{clientId}/secret/rotate": {
       "post": {
         "summary": "Rotate organization client secret",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1431,7 +1500,9 @@
     "/api/organizations/{orgId}/clients/{clientId}/providers": {
       "post": {
         "summary": "Configure provider credentials for organization client",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1510,7 +1581,9 @@
     "/api/organizations/{orgId}/clients/{clientId}/providers/{provider}": {
       "patch": {
         "summary": "Update provider credentials for organization client",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1544,7 +1617,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["google", "github"]
+              "enum": [
+                "google",
+                "github"
+              ]
             }
           }
         ],
@@ -1593,7 +1669,9 @@
       },
       "delete": {
         "summary": "Remove provider from organization client",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1627,7 +1705,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["google", "github"]
+              "enum": [
+                "google",
+                "github"
+              ]
             }
           }
         ],
@@ -1662,7 +1743,9 @@
     "/api/organizations/{orgId}/clients/{clientId}/webhook": {
       "post": {
         "summary": "Configure organization client logout webhook",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1736,7 +1819,9 @@
       },
       "delete": {
         "summary": "Disable organization client logout webhook",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1796,7 +1881,9 @@
     "/api/organizations/{orgId}/clients/{clientId}/webhook/secret/rotate": {
       "post": {
         "summary": "Rotate organization client logout webhook secret",
-        "tags": ["Clients"],
+        "tags": [
+          "Clients"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1862,7 +1949,9 @@
     "/api/organizations/invites/{token}": {
       "get": {
         "summary": "Get invite details by token for current user",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1912,7 +2001,9 @@
     "/api/organizations/invites/accept": {
       "post": {
         "summary": "Accept organization invite",
-        "tags": ["Organizations"],
+        "tags": [
+          "Organizations"
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -1965,10 +2056,122 @@
         }
       }
     },
+    "/api/oauth/authorize": {
+      "get": {
+        "summary": "Validate OIDC authorize request and redirect to frontend initiation page",
+        "tags": [
+          "SSO"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "response_type",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "code"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "redirect_uri",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "nonce",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Validate OIDC authorize request and redirect to frontend"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Client not found"
+          }
+        }
+      }
+    },
+    "/api/oauth/authorize/init": {
+      "get": {
+        "summary": "Return configured providers and generated authorization URLs for OIDC initiation",
+        "tags": [
+          "SSO"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "request",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetch configured providers and authorization URLs for OIDC initiation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcAuthorizeInitResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Client not found"
+          }
+        }
+      }
+    },
     "/api/oauth/google": {
       "get": {
         "summary": "Start Google OAuth authorization flow",
-        "tags": ["OAuth"],
+        "tags": [
+          "OAuth"
+        ],
         "responses": {
           "302": {
             "description": "Redirect to provider authorization page"
@@ -1979,7 +2182,9 @@
     "/api/oauth/google/callback": {
       "get": {
         "summary": "Handle Google OAuth callback and create authenticated session",
-        "tags": ["OAuth"],
+        "tags": [
+          "OAuth"
+        ],
         "parameters": [
           {
             "in": "query",
@@ -2003,7 +2208,9 @@
     "/api/oauth/github": {
       "get": {
         "summary": "Start GitHub OAuth authorization flow",
-        "tags": ["OAuth"],
+        "tags": [
+          "OAuth"
+        ],
         "responses": {
           "302": {
             "description": "Redirect to provider authorization page"
@@ -2014,7 +2221,9 @@
     "/api/oauth/github/callback": {
       "get": {
         "summary": "Handle GitHub OAuth callback and create authenticated session",
-        "tags": ["OAuth"],
+        "tags": [
+          "OAuth"
+        ],
         "parameters": [
           {
             "in": "query",
@@ -2038,7 +2247,9 @@
     "/api/oauth/orgs/{orgId}/clients/{clientId}/providers": {
       "get": {
         "summary": "List configured OAuth providers for an organization client",
-        "tags": ["OAuth"],
+        "tags": [
+          "SSO"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2090,7 +2301,10 @@
                         "properties": {
                           "provider": {
                             "type": "string",
-                            "enum": ["google", "github"]
+                            "enum": [
+                              "google",
+                              "github"
+                            ]
                           },
                           "startUrl": {
                             "type": "string",
@@ -2113,7 +2327,9 @@
     "/api/oauth/orgs/{orgId}/clients/{clientId}/{provider}/start": {
       "get": {
         "summary": "Start organization client OAuth flow",
-        "tags": ["OAuth"],
+        "tags": [
+          "SSO"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2139,7 +2355,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["google", "github"]
+              "enum": [
+                "google",
+                "github"
+              ]
             }
           },
           {
@@ -2157,7 +2376,10 @@
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["signin", "signup"]
+              "enum": [
+                "signin",
+                "signup"
+              ]
             }
           }
         ],
@@ -2177,7 +2399,9 @@
     "/api/oauth/orgs/{orgId}/clients/{clientId}/{provider}/callback": {
       "get": {
         "summary": "Handle organization client OAuth callback",
-        "tags": ["OAuth"],
+        "tags": [
+          "SSO"
+        ],
         "parameters": [
           {
             "in": "path",
@@ -2203,7 +2427,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["google", "github"]
+              "enum": [
+                "google",
+                "github"
+              ]
             }
           },
           {
@@ -2236,7 +2463,9 @@
     "/api/oauth/orgs/confirm": {
       "post": {
         "summary": "Confirm relogin challenge for organization OAuth flow",
-        "tags": ["OAuth"],
+        "tags": [
+          "SSO"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2298,7 +2527,10 @@
             "type": "string"
           }
         },
-        "required": ["error", "code"]
+        "required": [
+          "error",
+          "code"
+        ]
       },
       "AuthSession": {
         "type": "object",
@@ -2384,7 +2616,10 @@
       },
       "SignupRequest": {
         "type": "object",
-        "required": ["email", "password"],
+        "required": [
+          "email",
+          "password"
+        ],
         "properties": {
           "email": {
             "type": "string",
@@ -2406,7 +2641,10 @@
       },
       "LoginRequest": {
         "type": "object",
-        "required": ["email", "password"],
+        "required": [
+          "email",
+          "password"
+        ],
         "properties": {
           "email": {
             "type": "string",
@@ -2475,7 +2713,13 @@
             "format": "date-time"
           }
         },
-        "required": ["id", "name", "slug", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "OrganizationMembership": {
         "type": "object",
@@ -2494,7 +2738,11 @@
           },
           "role": {
             "type": "string",
-            "enum": ["owner", "admin", "member"]
+            "enum": [
+              "owner",
+              "admin",
+              "member"
+            ]
           },
           "invitedByUserId": {
             "type": "string",
@@ -2540,7 +2788,11 @@
           },
           "role": {
             "type": "string",
-            "enum": ["owner", "admin", "member"]
+            "enum": [
+              "owner",
+              "admin",
+              "member"
+            ]
           },
           "invitedByUserId": {
             "type": "string",
@@ -2573,7 +2825,9 @@
       },
       "CreateOrganizationRequest": {
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -2594,7 +2848,9 @@
       },
       "CreateOrganizationInviteRequest": {
         "type": "object",
-        "required": ["email"],
+        "required": [
+          "email"
+        ],
         "properties": {
           "email": {
             "type": "string",
@@ -2602,14 +2858,20 @@
           },
           "role": {
             "type": "string",
-            "enum": ["owner", "admin", "member"],
+            "enum": [
+              "owner",
+              "admin",
+              "member"
+            ],
             "default": "member"
           }
         }
       },
       "AcceptOrganizationInviteRequest": {
         "type": "object",
-        "required": ["token"],
+        "required": [
+          "token"
+        ],
         "properties": {
           "token": {
             "type": "string"
@@ -2618,17 +2880,24 @@
       },
       "UpdateOrganizationMemberRoleRequest": {
         "type": "object",
-        "required": ["role"],
+        "required": [
+          "role"
+        ],
         "properties": {
           "role": {
             "type": "string",
-            "enum": ["admin", "member"]
+            "enum": [
+              "admin",
+              "member"
+            ]
           }
         }
       },
       "TransferOrganizationOwnershipRequest": {
         "type": "object",
-        "required": ["targetUserId"],
+        "required": [
+          "targetUserId"
+        ],
         "properties": {
           "targetUserId": {
             "type": "string",
@@ -2636,7 +2905,10 @@
           },
           "previousOwnerRole": {
             "type": "string",
-            "enum": ["admin", "member"],
+            "enum": [
+              "admin",
+              "member"
+            ],
             "default": "admin"
           }
         }
@@ -2678,7 +2950,10 @@
           },
           "provider": {
             "type": "string",
-            "enum": ["google", "github"]
+            "enum": [
+              "google",
+              "github"
+            ]
           },
           "callbackUrl": {
             "type": "string",
@@ -2775,7 +3050,10 @@
       },
       "CreateOrganizationClientRequest": {
         "type": "object",
-        "required": ["name", "redirectUris"],
+        "required": [
+          "name",
+          "redirectUris"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -2827,11 +3105,18 @@
       },
       "CreateOrganizationClientProviderRequest": {
         "type": "object",
-        "required": ["provider", "providerClientId", "providerClientSecret"],
+        "required": [
+          "provider",
+          "providerClientId",
+          "providerClientSecret"
+        ],
         "properties": {
           "provider": {
             "type": "string",
-            "enum": ["google", "github"]
+            "enum": [
+              "google",
+              "github"
+            ]
           },
           "providerClientId": {
             "type": "string"
@@ -2859,7 +3144,9 @@
       },
       "ConfigureOrganizationClientWebhookRequest": {
         "type": "object",
-        "required": ["webhookUrl"],
+        "required": [
+          "webhookUrl"
+        ],
         "properties": {
           "webhookUrl": {
             "type": "string",
@@ -2965,10 +3252,123 @@
       },
       "ConfirmOrganizationOauthChallengeRequest": {
         "type": "object",
-        "required": ["challengeToken"],
+        "required": [
+          "challengeToken"
+        ],
         "properties": {
           "challengeToken": {
             "type": "string"
+          }
+        }
+      },
+      "OidcAuthorizeRequestQuery": {
+        "type": "object",
+        "required": [
+          "response_type",
+          "client_id",
+          "redirect_uri",
+          "scope"
+        ],
+        "properties": {
+          "response_type": {
+            "type": "string",
+            "enum": [
+              "code"
+            ]
+          },
+          "client_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "redirect_uri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "scope": {
+            "type": "string",
+            "example": "openid profile email"
+          },
+          "state": {
+            "type": "string"
+          },
+          "nonce": {
+            "type": "string"
+          }
+        }
+      },
+      "OidcAuthorizeInitResponse": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "orgId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "request": {
+            "type": "object",
+            "properties": {
+              "responseType": {
+                "type": "string",
+                "enum": [
+                  "code"
+                ]
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "redirectUri": {
+                "type": "string",
+                "format": "uri"
+              },
+              "scope": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "openid",
+                    "profile",
+                    "email"
+                  ]
+                }
+              },
+              "state": {
+                "type": "string"
+              },
+              "nonce": {
+                "type": "string"
+              }
+            }
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "enum": [
+                    "google",
+                    "github"
+                  ]
+                },
+                "authorizationUrl": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
           }
         }
       },
@@ -2987,7 +3387,11 @@
                   "properties": {
                     "role": {
                       "type": "string",
-                      "enum": ["owner", "admin", "member"]
+                      "enum": [
+                        "owner",
+                        "admin",
+                        "member"
+                      ]
                     }
                   }
                 }
@@ -3028,6 +3432,10 @@
     {
       "name": "Clients",
       "description": "Organization OAuth client and provider configuration"
+    },
+    {
+      "name": "SSO",
+      "description": "OIDC and organization SSO initiation flows"
     },
     {
       "name": "OAuth",

@@ -15,7 +15,7 @@ import {
   fetchGithubProfile,
   getGithubAuthorizationUrl,
 } from "./providers/github.provider.js";
-import { createUserSession } from "../auth/session.service.js";
+import { createOrReuseUserSession } from "../auth/session.service.js";
 import { signAccessToken, signRefreshToken } from "../auth/token.service.js";
 import { AppError } from "../../utils/errors.js";
 import {
@@ -178,7 +178,7 @@ const completeOauthAuthSession = async ({
       tx,
     );
 
-    const sessionRow = await createUserSession(
+    const sessionRow = await createOrReuseUserSession(
       {
         userId: oauthUser.id,
         orgId,

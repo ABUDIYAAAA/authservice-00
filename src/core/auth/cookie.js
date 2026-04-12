@@ -19,3 +19,8 @@ export const refreshCookieOptions = {
   ...baseCookieOptions,
   maxAge: env.SESSION_TTL_DAYS * DAY_MS,
 };
+
+export const deviceCookieOptions = {
+  ...baseCookieOptions,
+  maxAge: 365 * DAY_MS,
+};

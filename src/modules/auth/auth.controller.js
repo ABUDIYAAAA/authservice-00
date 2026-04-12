@@ -21,6 +21,7 @@ import {
 } from "../../validations/auth/auth.validators.js";
 import {
   accessCookieOptions,
+  deviceCookieOptions,
   refreshCookieOptions,
 } from "../../core/auth/cookie.js";
 import { unauthorized } from "../../utils/errors.js";
@@ -38,7 +39,7 @@ import {
 import { AUTH_MESSAGES } from "./auth.constants.js";
 import { AUDIT_MESSAGES } from "../audit/audit.messages.js";
 
-const setAuthCookies = (res, tokens) => {
+const setAuthCookies = (res, tokens, deviceInfo = null) => {
   res.cookie(
     COOKIE_NAMES.ACCESS_TOKEN,
     tokens.accessToken,
@@ -49,6 +50,14 @@ const setAuthCookies = (res, tokens) => {
     tokens.refreshToken,
     refreshCookieOptions,
   );
+
+  if (deviceInfo?.deviceId) {
+    res.cookie(
+      COOKIE_NAMES.DEVICE_ID,
+      deviceInfo.deviceId,
+      deviceCookieOptions,
+    );
+  }
 };
 
 const clearAuthCookies = (res) => {
@@ -68,7 +77,7 @@ export const signupHandler = async (req, res) => {
   const auditContext = buildAuditContextFromRequest(req);
 
   const result = await signup(payload, deviceInfo);
-  setAuthCookies(res, result);
+  setAuthCookies(res, result, deviceInfo);
 
   await emitAuditEvent({
     ...auditContext,
@@ -98,7 +107,7 @@ export const loginHandler = async (req, res) => {
   try {
     const result = await login(payload, deviceInfo);
 
-    setAuthCookies(res, result);
+    setAuthCookies(res, result, deviceInfo);
 
     await emitAuditEvent({
       ...auditContext,
@@ -180,9 +189,10 @@ export const refreshHandler = async (req, res) => {
   }
 
   try {
+    const deviceInfo = buildRequestDevice(req);
     const result = await refreshAuth(refreshToken);
 
-    setAuthCookies(res, result);
+    setAuthCookies(res, result, deviceInfo);
 
     await emitAuditEvent({
       ...auditContext,

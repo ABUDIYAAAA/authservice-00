@@ -1,9 +1,11 @@
 import env from "../../core/config/config.js";
 import {
   createSession,
+  findReusableSession,
   findSessionById,
   rotateSessionVersion,
   revokeSessionById,
+  touchSessionById,
 } from "./auth.repository.js";
 
 export const sessionExpiryDate = () => {
@@ -30,6 +32,47 @@ export const createUserSession = async (
     },
     tx,
   );
+};
+
+export const createOrReuseUserSession = async (
+  { userId, orgId, clientId, deviceId, userAgent, ipAddress },
+  tx,
+) => {
+  const existingSession = await findReusableSession(
+    {
+      userId,
+      orgId: orgId || null,
+      clientId: clientId || null,
+      deviceId,
+    },
+    tx,
+  );
+
+  if (!existingSession) {
+    return createUserSession(
+      {
+        userId,
+        orgId,
+        clientId,
+        deviceId,
+        userAgent,
+        ipAddress,
+      },
+      tx,
+    );
+  }
+
+  const touchedSession = await touchSessionById(
+    existingSession.id,
+    {
+      userAgent,
+      ipAddress,
+      expiresAt: sessionExpiryDate(),
+    },
+    tx,
+  );
+
+  return touchedSession || existingSession;
 };
 
 export const rotateSession = async (sessionId, expectedVersion, tx) => {

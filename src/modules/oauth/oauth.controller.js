@@ -1,5 +1,6 @@
 import {
   accessCookieOptions,
+  deviceCookieOptions,
   refreshCookieOptions,
 } from "../../core/auth/cookie.js";
 import { badRequest } from "../../utils/errors.js";
@@ -37,7 +38,7 @@ import {
 import { confirmOrganizationOauthChallenge } from "./oauth.service.js";
 import { OAUTH_CALLBACK_QUERY_CHALLENGE_TOKEN } from "./oauth.constants.js";
 
-const setAuthCookies = (res, tokens) => {
+const setAuthCookies = (res, tokens, deviceInfo = null) => {
   res.cookie(
     COOKIE_NAMES.ACCESS_TOKEN,
     tokens.accessToken,
@@ -48,6 +49,14 @@ const setAuthCookies = (res, tokens) => {
     tokens.refreshToken,
     refreshCookieOptions,
   );
+
+  if (deviceInfo?.deviceId) {
+    res.cookie(
+      COOKIE_NAMES.DEVICE_ID,
+      deviceInfo.deviceId,
+      deviceCookieOptions,
+    );
+  }
 };
 
 export const oauthStartHandler = async (req, res) => {
@@ -91,10 +100,11 @@ export const oauthCallbackHandler = async (req, res) => {
   }
 
   try {
+    const deviceInfo = buildRequestDevice(req);
     const result = await handleOauthCallback({
       provider,
       code,
-      deviceInfo: buildRequestDevice(req),
+      deviceInfo,
     });
 
     await emitAuditEvent({
@@ -111,7 +121,7 @@ export const oauthCallbackHandler = async (req, res) => {
       },
     });
 
-    setAuthCookies(res, result);
+    setAuthCookies(res, result, deviceInfo);
     res.redirect(result.redirectTo);
   } catch (error) {
     await emitAuditEvent({
@@ -202,13 +212,14 @@ export const organizationOauthCallbackHandler = async (req, res) => {
   const auditContext = buildAuditContextFromRequest(req);
 
   try {
+    const deviceInfo = buildRequestDevice(req);
     const result = await handleOrganizationClientOauthCallback({
       orgId,
       clientId,
       provider,
       code: query.code,
       stateToken: query.state,
-      deviceInfo: buildRequestDevice(req),
+      deviceInfo,
     });
 
     await emitAuditEvent({
@@ -239,7 +250,7 @@ export const organizationOauthCallbackHandler = async (req, res) => {
       return;
     }
 
-    setAuthCookies(res, result);
+    setAuthCookies(res, result, deviceInfo);
     res.redirect(
       buildRedirectWithQuery(result.redirectTo, {
         oauth: "success",
@@ -269,12 +280,13 @@ export const organizationOauthCallbackHandler = async (req, res) => {
 
 export const confirmOrganizationOauthChallengeHandler = async (req, res) => {
   const payload = confirmOrganizationOauthChallengeSchema.parse(req.body);
+  const deviceInfo = buildRequestDevice(req);
 
   const result = await confirmOrganizationOauthChallenge(
     payload.challengeToken,
   );
 
-  setAuthCookies(res, result);
+  setAuthCookies(res, result, deviceInfo);
   res.status(200).json({
     redirectTo: buildRedirectWithQuery(result.redirectTo, {
       oauth: "success",

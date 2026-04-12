@@ -24,6 +24,7 @@ import {
   verifyRefreshToken,
 } from "./token.service.js";
 import {
+  createOrReuseUserSession,
   createUserSession,
   findSession,
   rotateSession,
@@ -170,7 +171,7 @@ export const login = async (input, deviceInfo) => {
     deviceInfo.deviceId,
   );
 
-  const session = await createUserSession({
+  const session = await createOrReuseUserSession({
     userId: user.id,
     orgId: null,
     deviceId: deviceInfo.deviceId,

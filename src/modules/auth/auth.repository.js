@@ -67,6 +67,52 @@ export const findSessionByUserAndDevice = async (userId, deviceId, tx = db) => {
   return session || null;
 };
 
+export const findReusableSession = async (
+  { userId, orgId = null, clientId = null, deviceId },
+  tx = db,
+) => {
+  const conditions = [
+    eq(sessions.userId, userId),
+    eq(sessions.deviceId, deviceId),
+    eq(sessions.isActive, true),
+    gt(sessions.expiresAt, new Date()),
+  ];
+
+  if (orgId) {
+    conditions.push(eq(sessions.orgId, orgId));
+  } else {
+    conditions.push(isNull(sessions.orgId));
+  }
+
+  if (clientId) {
+    conditions.push(eq(sessions.clientId, clientId));
+  } else {
+    conditions.push(isNull(sessions.clientId));
+  }
+
+  const [session] = await tx
+    .select()
+    .from(sessions)
+    .where(and(...conditions))
+    .orderBy(desc(sessions.lastActivityAt))
+    .limit(1);
+
+  return session || null;
+};
+
+export const touchSessionById = async (sessionId, payload, tx = db) => {
+  const [updated] = await tx
+    .update(sessions)
+    .set({
+      ...payload,
+      lastActivityAt: new Date(),
+    })
+    .where(and(eq(sessions.id, sessionId), eq(sessions.isActive, true)))
+    .returning();
+
+  return updated || null;
+};
+
 export const listActiveSessionsByUserId = async (userId, tx = db) => {
   return tx
     .select()

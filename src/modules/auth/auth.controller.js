@@ -20,10 +20,9 @@ import {
   signupSchema,
 } from "../../validations/auth/auth.validators.js";
 import {
-  accessCookieOptions,
-  deviceCookieOptions,
-  refreshCookieOptions,
-} from "../../core/auth/cookie.js";
+  clearAuthCookies,
+  setAuthCookies,
+} from "../../core/auth/auth-cookies.js";
 import { unauthorized } from "../../utils/errors.js";
 import { COOKIE_NAMES } from "../../core/constants/cookie.constants.js";
 import { TOKEN_ERROR_MESSAGES } from "../../core/constants/security.constants.js";
@@ -39,63 +38,27 @@ import {
 import { AUTH_MESSAGES } from "./auth.constants.js";
 import { AUDIT_MESSAGES } from "../audit/audit.messages.js";
 
-const setAuthCookies = (res, tokens, deviceInfo = null) => {
-  res.cookie(
-    COOKIE_NAMES.ACCESS_TOKEN,
-    tokens.accessToken,
-    accessCookieOptions,
-  );
-  res.cookie(
-    COOKIE_NAMES.REFRESH_TOKEN,
-    tokens.refreshToken,
-    refreshCookieOptions,
-  );
-
-  if (deviceInfo?.deviceId) {
-    res.cookie(
-      COOKIE_NAMES.DEVICE_ID,
-      deviceInfo.deviceId,
-      deviceCookieOptions,
-    );
-  }
-};
-
-const clearAuthCookies = (res) => {
-  res.clearCookie(COOKIE_NAMES.ACCESS_TOKEN, {
-    ...accessCookieOptions,
-    maxAge: undefined,
-  });
-  res.clearCookie(COOKIE_NAMES.REFRESH_TOKEN, {
-    ...refreshCookieOptions,
-    maxAge: undefined,
-  });
-};
-
 export const signupHandler = async (req, res) => {
   const payload = signupSchema.parse(req.body);
-  const deviceInfo = buildRequestDevice(req);
   const auditContext = buildAuditContextFromRequest(req);
 
-  const result = await signup(payload, deviceInfo);
-  setAuthCookies(res, result, deviceInfo);
+  const result = await signup(payload);
 
   await emitAuditEvent({
     ...auditContext,
     event: AUDIT_EVENTS.AUTH_SIGNUP_SUCCESS,
     category: AUDIT_CATEGORY.AUTH,
     status: AUDIT_STATUS.SUCCESS,
-    targetUserId: result.user.id,
+    targetUserId: result.user?.id,
     message: AUDIT_MESSAGES.AUTH_SIGNUP_SUCCESS,
     metadata: {
-      email: result.user.email,
-      sessionId: result.session.id,
+      email: payload.email,
+      created: result.created,
     },
   });
 
-  res.status(201).json({
-    user: result.user,
-    session: result.session,
-    accessToken: result.accessToken,
+  res.status(202).json({
+    message: AUTH_MESSAGES.SIGNUP_REQUEST_RECEIVED,
   });
 };
 

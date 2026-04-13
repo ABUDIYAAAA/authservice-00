@@ -2,12 +2,12 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import db from "../../db/client/db.js";
 import env from "../../core/config/config.js";
+import { createUser, upsertOauthAccount } from "./oauth.repository.js";
 import {
-  findUserById,
-  createUser,
   findUserByEmail,
-  upsertOauthAccount,
-} from "./oauth.repository.js";
+  findUserById,
+  normalizeEmail,
+} from "../user/user.repository.js";
 import {
   exchangeGoogleCode,
   fetchGoogleProfile,
@@ -307,12 +307,13 @@ const completeOauthAuthSession = async ({
   }
 
   const { user, session } = await db.transaction(async (tx) => {
-    let oauthUser = await findUserByEmail(providerData.profile.email, tx);
+    const normalizedEmail = normalizeEmail(providerData.profile.email);
+    let oauthUser = await findUserByEmail(normalizedEmail, tx);
 
     if (!oauthUser) {
       oauthUser = await createUser(
         {
-          email: providerData.profile.email,
+          email: normalizedEmail,
           name: providerData.profile.name,
           avatarUrl: providerData.profile.avatarUrl,
           emailVerified: true,

@@ -23,8 +23,6 @@ import {
   findOrganizationBySlug,
   findOrganizationInviteById,
   findOrganizationMember,
-  findUserByEmail,
-  findUserById,
   findValidOrganizationInviteByToken,
   listOrganizationInvites,
   listOrganizationMembers,
@@ -34,6 +32,11 @@ import {
   updateOrganizationMemberRole,
   updateOrganizationById,
 } from "./organization.repository.js";
+import {
+  findUserByEmail,
+  findUserById,
+  normalizeEmail,
+} from "../user/user.repository.js";
 import {
   ORGANIZATION_DEFAULTS,
   ORGANIZATION_ERRORS,
@@ -251,7 +254,7 @@ export const createOrganizationInviteForUser = async (
     ORGANIZATION_ROLES.ADMIN,
   ]);
 
-  const invitedEmail = payload.email.trim().toLowerCase();
+  const invitedEmail = normalizeEmail(payload.email);
   const activeInvite = await findActiveInviteByOrgAndEmail(orgId, invitedEmail);
   if (activeInvite) {
     conflict(ORGANIZATION_ERRORS.INVITE_ALREADY_EXISTS);

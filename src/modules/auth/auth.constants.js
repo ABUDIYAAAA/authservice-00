@@ -24,9 +24,15 @@ export const AUTH_MESSAGES = {
   EMAIL_VERIFIED: "Email verified",
   PASSWORD_UPDATED: "Password updated",
   IF_ACCOUNT_EXISTS_EMAIL_SENT: "If the account exists, an email has been sent",
+  SIGNUP_REQUEST_RECEIVED:
+    "If the email can be registered, account setup instructions will be sent",
   IF_ACCOUNT_EXISTS_RESET_SENT:
     "If the account exists, a reset email has been sent",
   SESSION_REVOKED: "Session revoked",
+};
+
+export const AUTH_TIMING_CONSTANTS = {
+  SIGNUP_MIN_PROCESSING_MS: 350,
 };
 
 export const AUTH_ROUTE_PATHS = {

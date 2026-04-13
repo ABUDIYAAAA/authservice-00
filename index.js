@@ -115,18 +115,40 @@ const bootstrap = async () => {
     logger.info("Server listening", { port: env.PORT });
   });
 
-  const shutdown = async () => {
-    logger.info("Server shutdown started");
+  let shuttingDown = false;
+
+  const shutdown = async ({ signal = "unknown", error = null } = {}) => {
+    if (shuttingDown) {
+      return;
+    }
+
+    shuttingDown = true;
+    logger.info("Server shutdown started", { signal });
+
+    if (error) {
+      logger.error("Process-level failure", {
+        signal,
+        error: error.message,
+        stack: error.stack,
+      });
+    }
 
     server.close(async () => {
       await closeRedisConnection();
       logger.info("Server shutdown complete");
-      process.exit(0);
+      process.exit(error ? 1 : 0);
     });
   };
 
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", () => shutdown({ signal: "SIGINT" }));
+  process.on("SIGTERM", () => shutdown({ signal: "SIGTERM" }));
+  process.on("unhandledRejection", (reason) => {
+    const error = reason instanceof Error ? reason : new Error(String(reason));
+    shutdown({ signal: "unhandledRejection", error });
+  });
+  process.on("uncaughtException", (error) => {
+    shutdown({ signal: "uncaughtException", error });
+  });
 };
 
 bootstrap().catch(async (error) => {

@@ -12,22 +12,8 @@ import {
 import { AUDIT_MESSAGES } from "../audit/audit.messages.js";
 import { AUTH_HEADER_PREFIX } from "../../core/constants/security.constants.js";
 import { COOKIE_NAMES } from "../../core/constants/cookie.constants.js";
-import {
-  accessCookieOptions,
-  refreshCookieOptions,
-} from "../../core/auth/cookie.js";
 import { denylistAccessToken } from "../auth/token-denylist.service.js";
-
-const clearAuthCookies = (res) => {
-  res.clearCookie(COOKIE_NAMES.ACCESS_TOKEN, {
-    ...accessCookieOptions,
-    maxAge: undefined,
-  });
-  res.clearCookie(COOKIE_NAMES.REFRESH_TOKEN, {
-    ...refreshCookieOptions,
-    maxAge: undefined,
-  });
-};
+import { clearAuthCookies } from "../../core/auth/auth-cookies.js";
 
 const getRequestAccessToken = (req) => {
   const authHeader = req.headers.authorization;

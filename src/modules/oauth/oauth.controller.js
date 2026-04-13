@@ -1,8 +1,4 @@
-import {
-  accessCookieOptions,
-  deviceCookieOptions,
-  refreshCookieOptions,
-} from "../../core/auth/cookie.js";
+import { setAuthCookies } from "../../core/auth/auth-cookies.js";
 import { badRequest } from "../../utils/errors.js";
 import {
   AUDIT_CATEGORY,
@@ -33,7 +29,6 @@ import {
   OAUTH_CALLBACK_QUERY_STATE,
   OAUTH_ERRORS,
 } from "./oauth.constants.js";
-import { COOKIE_NAMES } from "../../core/constants/cookie.constants.js";
 import { AUDIT_MESSAGES } from "../audit/audit.messages.js";
 import {
   confirmOrganizationOauthChallengeSchema,
@@ -48,27 +43,6 @@ import {
 } from "../../validations/oauth/oauth.validators.js";
 import { confirmOrganizationOauthChallenge } from "./oauth.service.js";
 import { OAUTH_CALLBACK_QUERY_CHALLENGE_TOKEN } from "./oauth.constants.js";
-
-const setAuthCookies = (res, tokens, deviceInfo = null) => {
-  res.cookie(
-    COOKIE_NAMES.ACCESS_TOKEN,
-    tokens.accessToken,
-    accessCookieOptions,
-  );
-  res.cookie(
-    COOKIE_NAMES.REFRESH_TOKEN,
-    tokens.refreshToken,
-    refreshCookieOptions,
-  );
-
-  if (deviceInfo?.deviceId) {
-    res.cookie(
-      COOKIE_NAMES.DEVICE_ID,
-      deviceInfo.deviceId,
-      deviceCookieOptions,
-    );
-  }
-};
 
 export const oidcAuthorizeHandler = async (req, res) => {
   const query = oidcAuthorizeQuerySchema.parse(req.query);

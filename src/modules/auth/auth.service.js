@@ -1,14 +1,12 @@
 import crypto from "node:crypto";
 import db from "../../db/client/db.js";
 import env from "../../core/config/config.js";
-import { conflict, notFound, unauthorized } from "../../utils/errors.js";
+import { notFound, unauthorized } from "../../utils/errors.js";
 import {
   createEmailVerificationToken,
   createPasswordResetToken,
   createUser,
   findSessionByUserAndDevice,
-  findUserByEmail,
-  findUserById,
   listActiveSessionsByUserId,
   markEmailVerificationTokenUsed,
   markPasswordResetTokenUsed,
@@ -18,6 +16,11 @@ import {
   revokeAllSessionsByUserId,
   updateUserById,
 } from "./auth.repository.js";
+import {
+  findUserByEmail,
+  findUserById,
+  normalizeEmail,
+} from "../user/user.repository.js";
 import { comparePassword, hashPassword } from "./password.service.js";
 import {
   signAccessToken,
@@ -26,7 +29,6 @@ import {
 } from "./token.service.js";
 import {
   createOrReuseUserSession,
-  createUserSession,
   findSession,
   rotateSession,
   revokeSession,
@@ -43,6 +45,7 @@ import {
 import {
   AUTH_ERRORS,
   AUTH_ROUTE_PATHS,
+  AUTH_TIMING_CONSTANTS,
   AUTH_TOKEN_BYTES,
   AUTH_TOKEN_TTL_MS,
 } from "./auth.constants.js";
@@ -51,6 +54,33 @@ import { QUEUE_JOB_NAMES } from "../../core/constants/queue.constants.js";
 import { setReloginConfirmationRequirement } from "../oauth/oauth-challenge.service.js";
 import { queueServiceLogoutWebhook } from "../webhook/webhook.queue.js";
 import { findOrganizationClientById } from "../client/client.repository.js";
+
+const DUMMY_PASSWORD_INPUT = "not-a-real-user-password";
+let dummyPasswordHashPromise;
+
+const getDummyPasswordHash = () => {
+  if (!dummyPasswordHashPromise) {
+    dummyPasswordHashPromise = hashPassword(DUMMY_PASSWORD_INPUT);
+  }
+
+  return dummyPasswordHashPromise;
+};
+
+const runDummyPasswordCompare = async (password) => {
+  const dummyHash = await getDummyPasswordHash();
+  await comparePassword(password, dummyHash);
+};
+
+const ensureMinimumDuration = async (startedAtMs, minimumDurationMs) => {
+  const elapsedMs = Date.now() - startedAtMs;
+  if (elapsedMs >= minimumDurationMs) {
+    return;
+  }
+
+  await new Promise((resolve) => {
+    setTimeout(resolve, minimumDurationMs - elapsedMs);
+  });
+};
 
 const generateOneTimeToken = () =>
   crypto.randomBytes(AUTH_TOKEN_BYTES).toString("hex");
@@ -73,18 +103,28 @@ const sanitizeUser = (user) => {
   return safeUser;
 };
 
-export const signup = async (input, deviceInfo) => {
-  const result = await db.transaction(async (tx) => {
-    const existing = await findUserByEmail(input.email, tx);
-    if (existing) {
-      conflict(AUTH_ERRORS.EMAIL_EXISTS);
-    }
+export const signup = async (input) => {
+  const startedAtMs = Date.now();
+  const normalizedEmail = normalizeEmail(input.email);
+  const existing = await findUserByEmail(normalizedEmail);
+  if (existing) {
+    await runDummyPasswordCompare(input.password);
+    await ensureMinimumDuration(
+      startedAtMs,
+      AUTH_TIMING_CONSTANTS.SIGNUP_MIN_PROCESSING_MS,
+    );
 
+    return {
+      created: false,
+    };
+  }
+
+  const result = await db.transaction(async (tx) => {
     const passwordHash = await hashPassword(input.password);
 
     const user = await createUser(
       {
-        email: input.email,
+        email: normalizedEmail,
         passwordHash,
         name: input.name,
         avatarUrl: input.avatarUrl,
@@ -108,22 +148,8 @@ export const signup = async (input, deviceInfo) => {
       tx,
     );
 
-    const session = await createUserSession(
-      {
-        userId: user.id,
-        orgId: null,
-        deviceId: deviceInfo.deviceId,
-        userAgent: deviceInfo.userAgent,
-        ipAddress: deviceInfo.ipAddress,
-      },
-      tx,
-    );
-
-    await updateUserById(user.id, { lastLoginAt: new Date() }, tx);
-
     return {
       user,
-      session,
       verificationToken,
     };
   });
@@ -143,22 +169,21 @@ export const signup = async (input, deviceInfo) => {
     }),
   ]);
 
-  const tokens = issueAuthTokens({
-    userId: result.user.id,
-    sessionId: result.session.id,
-    sessionVersion: result.session.version,
-  });
+  await ensureMinimumDuration(
+    startedAtMs,
+    AUTH_TIMING_CONSTANTS.SIGNUP_MIN_PROCESSING_MS,
+  );
 
   return {
-    ...tokens,
+    created: true,
     user: sanitizeUser(result.user),
-    session: result.session,
   };
 };
 
 export const login = async (input, deviceInfo) => {
   const user = await findUserByEmail(input.email);
   if (!user || !user.passwordHash) {
+    await runDummyPasswordCompare(input.password);
     unauthorized(AUTH_ERRORS.INVALID_CREDENTIALS);
   }
 
@@ -326,7 +351,8 @@ export const verifyEmail = async (token) => {
 };
 
 export const resendVerificationEmail = async ({ email }) => {
-  const user = await findUserByEmail(email);
+  const normalizedEmail = normalizeEmail(email);
+  const user = await findUserByEmail(normalizedEmail);
   if (!user) {
     return;
   }
@@ -340,13 +366,13 @@ export const resendVerificationEmail = async ({ email }) => {
 
   await createEmailVerificationToken({
     userId: user.id,
-    email,
+    email: user.email,
     token,
     expiresAt,
   });
 
   await queueEmailJob({
-    to: email,
+    to: user.email,
     subject: EMAIL_SUBJECTS.VERIFY_EMAIL,
     html: emailVerificationTemplate({
       verifyUrl: `${env.API_BASE_URL}${AUTH_ROUTE_PATHS.VERIFY_EMAIL}/${token}`,
@@ -355,7 +381,7 @@ export const resendVerificationEmail = async ({ email }) => {
 };
 
 export const forgotPassword = async ({ email }) => {
-  const user = await findUserByEmail(email);
+  const user = await findUserByEmail(normalizeEmail(email));
   if (!user) {
     return;
   }

@@ -160,26 +160,6 @@ export const listOrganizationsByUserId = async (userId, tx = db) => {
     .orderBy(desc(organizationMembers.createdAt));
 };
 
-export const findUserByEmail = async (email, tx = db) => {
-  const [user] = await tx
-    .select()
-    .from(users)
-    .where(sql`lower(${users.email}) = lower(${email})`)
-    .limit(1);
-
-  return user || null;
-};
-
-export const findUserById = async (userId, tx = db) => {
-  const [user] = await tx
-    .select()
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-
-  return user || null;
-};
-
 export const createOrganizationInvite = async (payload, tx = db) => {
   const [invite] = await tx
     .insert(organizationInvites)

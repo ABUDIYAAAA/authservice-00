@@ -12,20 +12,6 @@ export const createUser = async (payload, tx = db) => {
   return created;
 };
 
-export const findUserByEmail = async (email, tx = db) => {
-  const [user] = await tx
-    .select()
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
-  return user || null;
-};
-
-export const findUserById = async (id, tx = db) => {
-  const [user] = await tx.select().from(users).where(eq(users.id, id)).limit(1);
-  return user || null;
-};
-
 export const updateUserById = async (id, payload, tx = db) => {
   const [updated] = await tx
     .update(users)

@@ -6,6 +6,7 @@ import {
   TOKEN_ERROR_MESSAGES,
 } from "../../core/constants/security.constants.js";
 import { COOKIE_NAMES } from "../../core/constants/cookie.constants.js";
+import { isAccessTokenDenylisted } from "./token-denylist.service.js";
 
 export const requireAuth = async (req, _res, next) => {
   const authHeader = req.headers.authorization;
@@ -16,6 +17,10 @@ export const requireAuth = async (req, _res, next) => {
 
   if (!token) {
     unauthorized(TOKEN_ERROR_MESSAGES.MISSING_ACCESS);
+  }
+
+  if (await isAccessTokenDenylisted(token)) {
+    unauthorized(TOKEN_ERROR_MESSAGES.INVALID);
   }
 
   const payload = verifyAccessToken(token);

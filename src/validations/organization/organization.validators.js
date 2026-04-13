@@ -46,7 +46,7 @@ export const inviteIdParamSchema = z.object({
 
 export const createOrganizationInviteSchema = z.object({
   email: z.string().email(),
-  role: roleSchema.default(ORGANIZATION_DEFAULTS.INVITE_ROLE),
+  role: nonOwnerRoleSchema.default(ORGANIZATION_DEFAULTS.INVITE_ROLE),
 });
 
 export const acceptOrganizationInviteSchema = z.object({

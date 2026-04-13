@@ -27,8 +27,8 @@ import {
 const app = express();
 
 app.use(requestContext);
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: "100kb" }));
+app.use(express.urlencoded({ extended: false, limit: "100kb" }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(

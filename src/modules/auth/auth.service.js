@@ -12,6 +12,7 @@ import {
   listActiveSessionsByUserId,
   markEmailVerificationTokenUsed,
   markPasswordResetTokenUsed,
+  markUnusedPasswordResetTokensUsedByUserId,
   findValidEmailVerificationToken,
   findValidPasswordResetToken,
   revokeAllSessionsByUserId,
@@ -362,10 +363,17 @@ export const forgotPassword = async ({ email }) => {
   const token = generateOneTimeToken();
   const expiresAt = new Date(Date.now() + AUTH_TOKEN_TTL_MS.PASSWORD_RESET);
 
-  await createPasswordResetToken({
-    userId: user.id,
-    token,
-    expiresAt,
+  await db.transaction(async (tx) => {
+    await markUnusedPasswordResetTokensUsedByUserId(user.id, tx);
+
+    await createPasswordResetToken(
+      {
+        userId: user.id,
+        token,
+        expiresAt,
+      },
+      tx,
+    );
   });
 
   await queueEmailJob({

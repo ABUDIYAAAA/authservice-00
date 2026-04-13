@@ -1,4 +1,7 @@
+import db from "../../db/client/db.js";
 import { notFound } from "../../utils/errors.js";
+import { revokeAllSessionsByUserId } from "../auth/auth.repository.js";
+import { deleteOauthStatesForUserId } from "../oauth/oauth-state.service.js";
 import {
   deleteUserById,
   findUserById,
@@ -29,7 +32,18 @@ export const updateMe = async (userId, payload) => {
 };
 
 export const deleteMe = async (userId) => {
-  const user = await deleteUserById(userId);
+  const existingUser = await findUserById(userId);
+  if (!existingUser) {
+    notFound("User not found");
+  }
+
+  await deleteOauthStatesForUserId(userId);
+
+  const user = await db.transaction(async (tx) => {
+    await revokeAllSessionsByUserId(userId, tx);
+    return deleteUserById(userId, tx);
+  });
+
   if (!user) {
     notFound("User not found");
   }

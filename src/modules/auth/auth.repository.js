@@ -233,3 +233,18 @@ export const markPasswordResetTokenUsed = async (id, tx = db) => {
 
   return updated || null;
 };
+
+export const markUnusedPasswordResetTokensUsedByUserId = async (
+  userId,
+  tx = db,
+) => {
+  return tx
+    .update(passwordResetTokens)
+    .set({ usedAt: new Date() })
+    .where(
+      and(
+        eq(passwordResetTokens.userId, userId),
+        isNull(passwordResetTokens.usedAt),
+      ),
+    );
+};

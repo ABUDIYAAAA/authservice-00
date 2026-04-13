@@ -60,3 +60,49 @@ export const readOauthState = async (stateToken) => {
     return null;
   }
 };
+
+export const deleteOauthStatesForUserId = async (userId) => {
+  const client = getRedisClient();
+  let cursor = "0";
+  let deletedCount = 0;
+
+  do {
+    const [nextCursor, keys] = await client.scan(
+      cursor,
+      "MATCH",
+      `${OAUTH_STATE_KEY_PREFIX}:*`,
+      "COUNT",
+      200,
+    );
+    cursor = nextCursor;
+
+    if (!keys.length) {
+      continue;
+    }
+
+    const values = await client.mget(keys);
+    const keysToDelete = [];
+
+    for (let index = 0; index < keys.length; index += 1) {
+      const rawValue = values[index];
+      if (!rawValue) {
+        continue;
+      }
+
+      try {
+        const parsedValue = JSON.parse(rawValue);
+        if (parsedValue?.userId === userId) {
+          keysToDelete.push(keys[index]);
+        }
+      } catch {
+        // Ignore malformed payloads and continue cleanup.
+      }
+    }
+
+    if (keysToDelete.length > 0) {
+      deletedCount += await client.del(...keysToDelete);
+    }
+  } while (cursor !== "0");
+
+  return deletedCount;
+};

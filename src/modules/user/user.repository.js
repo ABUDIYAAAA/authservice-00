@@ -27,10 +27,27 @@ export const findUserById = async (id, tx = db) => {
   return user || null;
 };
 
+const PROFILE_MUTABLE_FIELDS = ["name", "avatarUrl"];
+
+const pickMutableProfileFields = (payload = {}) => {
+  return PROFILE_MUTABLE_FIELDS.reduce((result, field) => {
+    if (Object.hasOwn(payload, field)) {
+      result[field] = payload[field];
+    }
+
+    return result;
+  }, {});
+};
+
 export const updateUserById = async (id, payload, tx = db) => {
+  const safePayload = pickMutableProfileFields(payload);
+  if (Object.keys(safePayload).length === 0) {
+    return findUserById(id, tx);
+  }
+
   const [updated] = await tx
     .update(users)
-    .set({ ...payload, updatedAt: new Date() })
+    .set({ ...safePayload, updatedAt: new Date() })
     .where(eq(users.id, id))
     .returning();
   return updated || null;

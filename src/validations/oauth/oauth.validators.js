@@ -84,6 +84,10 @@ export const oidcAuthorizeInitQuerySchema = z.object({
   request: z.string().trim().min(20).max(500),
 });
 
+export const oidcUserInfoQuerySchema = z.object({
+  client_id: z.string().uuid(),
+});
+
 export const oidcTokenBodySchema = z.object({
   grant_type: z.literal(OAUTH_OIDC_GRANT_TYPES.AUTHORIZATION_CODE),
   code: z.string().trim().min(20).max(500),

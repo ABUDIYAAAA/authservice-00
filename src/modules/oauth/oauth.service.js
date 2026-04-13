@@ -724,10 +724,45 @@ export const exchangeOidcToken = async ({ body, authorizationHeader }) => {
   };
 };
 
-export const getOidcUserInfo = async (accessToken) => {
+export const getOidcUserInfo = async (accessToken, requestingClientId) => {
   const payload = verifyAccessToken(accessToken);
 
   if (payload?.token_use !== OAUTH_TOKEN_USE.OIDC_ACCESS) {
+    throw new AppError(OAUTH_ERRORS.INVALID_GRANT, 401, {
+      code: OAUTH_ERROR_CODES.INVALID_GRANT,
+    });
+  }
+
+  if (payload?.iss !== env.API_BASE_URL) {
+    throw new AppError(OAUTH_ERRORS.INVALID_GRANT, 401, {
+      code: OAUTH_ERROR_CODES.INVALID_GRANT,
+    });
+  }
+
+  const tokenAudience = Array.isArray(payload?.aud)
+    ? payload.aud
+    : [payload?.aud];
+  const normalizedAudience = tokenAudience
+    .map((entry) => String(entry || "").trim())
+    .filter(Boolean);
+  const normalizedRequestingClientId = String(requestingClientId || "").trim();
+  const tokenClientId = String(payload?.client_id || "").trim();
+
+  if (
+    !normalizedRequestingClientId ||
+    !tokenClientId ||
+    tokenClientId !== normalizedRequestingClientId ||
+    !normalizedAudience.includes(normalizedRequestingClientId)
+  ) {
+    throw new AppError(OAUTH_ERRORS.INVALID_GRANT, 401, {
+      code: OAUTH_ERROR_CODES.INVALID_GRANT,
+    });
+  }
+
+  const client = await findOrganizationClientByClientId(
+    normalizedRequestingClientId,
+  );
+  if (!client) {
     throw new AppError(OAUTH_ERRORS.INVALID_GRANT, 401, {
       code: OAUTH_ERROR_CODES.INVALID_GRANT,
     });
@@ -1042,7 +1077,8 @@ export const confirmOrganizationOauthChallenge = async (challengeToken) => {
   if (
     !session ||
     !session.isActive ||
-    session.version !== challenge.sessionVersion
+    session.version !== challenge.sessionVersion ||
+    session.userId !== challenge.userId
   ) {
     throw new AppError(OAUTH_ERRORS.INVALID_STATE, 400, {
       code: OAUTH_ERROR_CODES.INVALID_STATE,

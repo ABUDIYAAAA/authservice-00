@@ -8,6 +8,15 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().url(),
   API_BASE_URL: z.string().url().optional(),
   DATABASE_URL: z.string().min(1),
+  PG_POOL_MAX: z.coerce.number().int().positive().default(20),
+  PG_POOL_MIN: z.coerce.number().int().min(0).default(0),
+  PG_POOL_IDLE_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
+  PG_POOL_CONNECTION_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(5000),
+  PG_POOL_MAX_USES: z.coerce.number().int().positive().default(7500),
   REDIS_URL: z.string().min(1),
   ACCESS_TOKEN_PRIVATE_KEY_PATH: z.string().min(1),
   ACCESS_TOKEN_PUBLIC_KEY_PATH: z.string().min(1),

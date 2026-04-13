@@ -36,6 +36,7 @@ import {
   oidcAuthorizeInitQuerySchema,
   oidcAuthorizeQuerySchema,
   oidcTokenBodySchema,
+  oidcUserInfoQuerySchema,
   organizationOauthCallbackQuerySchema,
   organizationOauthParamSchema,
   organizationOauthProvidersParamSchema,
@@ -123,6 +124,7 @@ export const oidcTokenHandler = async (req, res) => {
 };
 
 export const oidcUserInfoHandler = async (req, res) => {
+  const query = oidcUserInfoQuerySchema.parse(req.query || {});
   const authorization = req.headers.authorization;
 
   if (!authorization || !authorization.startsWith("Bearer ")) {
@@ -130,7 +132,7 @@ export const oidcUserInfoHandler = async (req, res) => {
   }
 
   const token = authorization.slice("Bearer ".length).trim();
-  const result = await getOidcUserInfo(token);
+  const result = await getOidcUserInfo(token, query.client_id);
 
   res.status(200).json(result);
 };

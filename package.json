@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/ABUDIYAAAA/authservice-00#readme",
   "dependencies": {
+    "@scalar/express-api-reference": "^0.9.9",
     "axios": "^1.15.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.73.4",

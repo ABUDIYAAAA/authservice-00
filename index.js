@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import cors from "cors";
 import env from "./src/core/config/config.js";
-import swaggerUi from "swagger-ui-express";
+import { apiReference } from "@scalar/express-api-reference";
 import swaggerSpec from "./src/core/config/swagger.js";
 import requestContext from "./src/utils/request-context.js";
 import errorMiddleware from "./src/utils/error-middleware.js";
@@ -25,6 +25,10 @@ import {
 } from "./src/core/constants/queue.constants.js";
 
 const app = express();
+const apiDocsCspDirectives = {
+  ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+  "script-src": ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
+};
 
 app.use(requestContext);
 app.use(express.json({ limit: "100kb" }));
@@ -46,14 +50,22 @@ app.use(
   }),
 );
 
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, { explorer: true }),
-);
-
 app.get("/api-docs.json", (req, res) => {
   res.status(200).json(swaggerSpec);
+});
+
+app.use(
+  "/api-docs",
+  helmet.contentSecurityPolicy({
+    directives: apiDocsCspDirectives,
+  }),
+  apiReference({
+    url: "/api-docs.json",
+  }),
+);
+
+app.get("/favicon.ico", (req, res) => {
+  res.status(204).end();
 });
 
 app.get("/.well-known/openid-configuration", (req, res) => {

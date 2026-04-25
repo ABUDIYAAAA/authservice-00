@@ -1,9 +1,10 @@
 {
   "name": "kael",
   "version": "1.0.0",
-  "description": "",
+  "description": "Multi-tenant authentication, OAuth/OIDC, and organization identity service.",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "dev": "nodemon .",
     "dev:all": "node src/scripts/dev-all.js",
     "test": "vitest",
@@ -20,8 +21,11 @@
     "url": "git+https://github.com/ABUDIYAAAA/authservice-00.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "ABUDIYAAAA",
   "license": "ISC",
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "bugs": {
     "url": "https://github.com/ABUDIYAAAA/authservice-00/issues"

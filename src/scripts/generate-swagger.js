@@ -48,6 +48,11 @@ const spec = {
       description: "Organization OAuth client and provider configuration",
     },
     {
+      name: OPENAPI_TAGS.WEBHOOKS,
+      description:
+        "Outbound webhook configuration, delivery logs, and replay operations",
+    },
+    {
       name: OPENAPI_TAGS.SSO,
       description: "OIDC and organization SSO initiation flows",
     },

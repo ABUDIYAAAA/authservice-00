@@ -22,6 +22,7 @@ It provides:
 - [Running the Service](#running-the-service)
 - [API Documentation](#api-documentation)
 - [API Surface](#api-surface)
+- [Webhook Management](#webhook-management)
 - [Background Jobs and Workers](#background-jobs-and-workers)
 - [Project Structure](#project-structure)
 - [Testing](#testing)
@@ -212,8 +213,39 @@ Primary route groups:
   - `/api/organizations/*`
 - Organization Clients
   - nested under `/api/organizations/:orgId/clients/*`
+- Webhook management
+  - configure, verify, test, disable, inspect deliveries, and replay outbound webhooks
 
 For request/response schemas, use the OpenAPI docs.
+
+## Webhook Management
+
+This service supports outbound webhook configuration and delivery for organization clients. Webhook management is implemented under the organization client API surface; it does not provide an inbound receiver endpoint for third-party webhook callbacks. Instead, you configure your receiver URL with the service and it will deliver events, verify ownership, record delivery logs, and replay failed deliveries.
+
+Base path:
+
+- `/api/organizations/:orgId/clients/:clientId/webhook`
+
+Webhook management endpoints:
+
+- `POST /api/organizations/:orgId/clients/:clientId/webhook`
+  - configure or update the webhook receiver URL
+- `POST /api/organizations/:orgId/clients/:clientId/webhook/verify`
+  - verify the receiver ownership for the configured webhook
+- `POST /api/organizations/:orgId/clients/:clientId/webhook/test`
+  - send a test webhook event to the configured receiver
+- `POST /api/organizations/:orgId/clients/:clientId/webhook/secret/rotate`
+  - rotate the webhook secret used for signing/verifying deliveries
+- `GET /api/organizations/:orgId/clients/:clientId/webhook/status`
+  - view current webhook configuration and delivery status
+- `GET /api/organizations/:orgId/clients/:clientId/webhook/deliveries`
+  - list webhook delivery logs and attempt history
+- `GET /api/organizations/:orgId/clients/:clientId/webhook/deliveries/:deliveryId`
+  - inspect a specific webhook delivery record
+- `POST /api/organizations/:orgId/clients/:clientId/webhook/deliveries/:deliveryId/replay`
+  - replay a failed webhook delivery attempt
+- `DELETE /api/organizations/:orgId/clients/:clientId/webhook`
+  - disable outbound webhook delivery for the client
 
 ## Background Jobs and Workers
 

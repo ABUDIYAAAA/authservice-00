@@ -1742,9 +1742,9 @@
     },
     "/api/organizations/{orgId}/clients/{clientId}/webhook": {
       "post": {
-        "summary": "Configure organization client logout webhook",
+        "summary": "Configure organization client webhook",
         "tags": [
-          "Clients"
+          "Webhooks"
         ],
         "security": [
           {
@@ -1818,9 +1818,9 @@
         }
       },
       "delete": {
-        "summary": "Disable organization client logout webhook",
+        "summary": "Disable organization client webhook",
         "tags": [
-          "Clients"
+          "Webhooks"
         ],
         "security": [
           {
@@ -1880,9 +1880,9 @@
     },
     "/api/organizations/{orgId}/clients/{clientId}/webhook/secret/rotate": {
       "post": {
-        "summary": "Rotate organization client logout webhook secret",
+        "summary": "Rotate organization client webhook secret",
         "tags": [
-          "Clients"
+          "Webhooks"
         ],
         "security": [
           {
@@ -1927,6 +1927,440 @@
                       "$ref": "#/components/schemas/OrganizationClientWebhookConfig"
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Organization or client not found"
+          }
+        }
+      }
+    },
+    "/api/organizations/{orgId}/clients/{clientId}/webhook/deliveries": {
+      "get": {
+        "summary": "List organization client webhook deliveries",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "success",
+                "failed"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "event",
+                "replay",
+                "test",
+                "verify"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "event",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization client webhook deliveries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveriesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Organization or client not found"
+          }
+        }
+      }
+    },
+    "/api/organizations/{orgId}/clients/{clientId}/webhook/deliveries/{deliveryId}": {
+      "get": {
+        "summary": "Get organization client webhook delivery details",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "deliveryId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization client webhook delivery details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Organization, client, or delivery not found"
+          }
+        }
+      }
+    },
+    "/api/organizations/{orgId}/clients/{clientId}/webhook/deliveries/{deliveryId}/replay": {
+      "post": {
+        "summary": "Replay a failed organization client webhook delivery",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "deliveryId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Organization client webhook delivery replay queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayWebhookDeliveryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Organization, client, or delivery not found"
+          }
+        }
+      }
+    },
+    "/api/organizations/{orgId}/clients/{clientId}/webhook/status": {
+      "get": {
+        "summary": "Get organization client webhook delivery status",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization client webhook delivery status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Organization or client not found"
+          }
+        }
+      }
+    },
+    "/api/organizations/{orgId}/clients/{clientId}/webhook/test": {
+      "post": {
+        "summary": "Send test webhook to organization client receiver",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestOrganizationClientWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Organization client webhook test completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestOrganizationClientWebhookResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Organization or client not found"
+          }
+        }
+      }
+    },
+    "/api/organizations/{orgId}/clients/{clientId}/webhook/verify": {
+      "post": {
+        "summary": "Verify organization client webhook receiver ownership",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization client webhook ownership verified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyOrganizationClientWebhookResponse"
                 }
               }
             }
@@ -2162,6 +2596,157 @@
           },
           "404": {
             "description": "Client not found"
+          }
+        }
+      }
+    },
+    "/api/oauth/authorize/complete": {
+      "post": {
+        "summary": "Complete OIDC authorize request after user authentication",
+        "tags": [
+          "SSO"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OidcAuthorizeCompleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Complete authorization for authenticated user and issue authorization code redirect",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcAuthorizeCompleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/oauth/token": {
+      "post": {
+        "summary": "Exchange OIDC authorization code for tokens",
+        "tags": [
+          "SSO"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OidcTokenRequest"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/OidcTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exchange authorization code for OIDC tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/oauth/userinfo": {
+      "get": {
+        "summary": "Fetch OIDC user claims using access token",
+        "tags": [
+          "SSO"
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetch OIDC userinfo claims from access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcUserInfoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/oauth/jwks": {
+      "get": {
+        "summary": "Get JWKS for OIDC token verification",
+        "tags": [
+          "SSO"
+        ],
+        "responses": {
+          "200": {
+            "description": "Get JWKS used to verify OIDC tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcJwksResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/openid-configuration": {
+      "get": {
+        "summary": "Get OpenID Provider configuration",
+        "tags": [
+          "SSO"
+        ],
+        "responses": {
+          "200": {
+            "description": "Get OIDC discovery configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcDiscoveryResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -3040,6 +3625,15 @@
             "type": "string",
             "nullable": true
           },
+          "webhookVerified": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "webhookVerifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "providers": {
             "type": "array",
             "items": {
@@ -3166,6 +3760,276 @@
           },
           "webhookSecret": {
             "type": "string"
+          },
+          "webhookVerified": {
+            "type": "boolean"
+          },
+          "webhookVerifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "WebhookDelivery": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orgId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object"
+          },
+          "idempotencyKey": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "event",
+              "replay",
+              "test",
+              "verify"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failed"
+            ]
+          },
+          "attempt": {
+            "type": "integer"
+          },
+          "triggeredByUserId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "replayOfDeliveryId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "httpStatus": {
+            "type": "integer",
+            "nullable": true
+          },
+          "responseTimeMs": {
+            "type": "integer",
+            "nullable": true
+          },
+          "responseBody": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "deliveredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WebhookDeliveriesResponse": {
+        "type": "object",
+        "properties": {
+          "deliveries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookDelivery"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer"
+              },
+              "offset": {
+                "type": "integer"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "total": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "WebhookDeliveryResponse": {
+        "type": "object",
+        "properties": {
+          "delivery": {
+            "$ref": "#/components/schemas/WebhookDelivery"
+          }
+        }
+      },
+      "ReplayWebhookDeliveryResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "queued": {
+            "type": "boolean"
+          },
+          "idempotencyKey": {
+            "type": "string"
+          }
+        }
+      },
+      "WebhookStatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "object",
+            "properties": {
+              "totalCount": {
+                "type": "integer"
+              },
+              "successCount": {
+                "type": "integer"
+              },
+              "failedCount": {
+                "type": "integer"
+              },
+              "pendingCount": {
+                "type": "integer"
+              },
+              "lastDeliveredAt": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "lastSuccessAt": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "lastFailureAt": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "lastFailure": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "event": {
+                    "type": "string"
+                  },
+                  "httpStatus": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "errorMessage": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "deliveredAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TestOrganizationClientWebhookRequest": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "TestOrganizationClientWebhookResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "test": {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean"
+              },
+              "idempotencyKey": {
+                "type": "string"
+              },
+              "httpStatus": {
+                "type": "integer",
+                "nullable": true
+              },
+              "responseTimeMs": {
+                "type": "integer",
+                "nullable": true
+              },
+              "responseBody": {
+                "type": "string",
+                "nullable": true
+              },
+              "error": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "VerifyOrganizationClientWebhookResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "verification": {
+            "type": "object",
+            "properties": {
+              "verified": {
+                "type": "boolean"
+              },
+              "challenge": {
+                "type": "string"
+              },
+              "verifiedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
           }
         }
       },
@@ -3372,6 +4236,147 @@
           }
         }
       },
+      "OidcAuthorizeCompleteRequest": {
+        "type": "object",
+        "required": [
+          "request"
+        ],
+        "properties": {
+          "request": {
+            "type": "string"
+          }
+        }
+      },
+      "OidcAuthorizeCompleteResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "redirectUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "OidcTokenRequest": {
+        "type": "object",
+        "required": [
+          "grant_type",
+          "code",
+          "redirect_uri"
+        ],
+        "properties": {
+          "grant_type": {
+            "type": "string",
+            "enum": [
+              "authorization_code"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "redirect_uri": {
+            "type": "string",
+            "format": "uri"
+          },
+          "client_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "client_secret": {
+            "type": "string"
+          },
+          "code_verifier": {
+            "type": "string"
+          }
+        }
+      },
+      "OidcTokenResponse": {
+        "type": "object",
+        "properties": {
+          "token_type": {
+            "type": "string",
+            "example": "Bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "example": 900
+          },
+          "access_token": {
+            "type": "string"
+          },
+          "id_token": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string",
+            "example": "openid profile email"
+          }
+        }
+      },
+      "OidcUserInfoResponse": {
+        "type": "object",
+        "properties": {
+          "sub": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "email_verified": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "picture": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          }
+        }
+      },
+      "OidcJwksResponse": {
+        "type": "object",
+        "properties": {
+          "keys": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        }
+      },
+      "OidcDiscoveryResponse": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "type": "string",
+            "format": "uri"
+          },
+          "authorization_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "token_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "userinfo_endpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "jwks_uri": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
       "OrganizationListResponse": {
         "type": "object",
         "properties": {
@@ -3432,6 +4437,10 @@
     {
       "name": "Clients",
       "description": "Organization OAuth client and provider configuration"
+    },
+    {
+      "name": "Webhooks",
+      "description": "Outbound webhook configuration, delivery logs, and replay operations"
     },
     {
       "name": "SSO",

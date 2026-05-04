@@ -966,8 +966,8 @@ export const OPENAPI_PATH_DEFINITIONS = {
   },
   [OPENAPI_PATHS.ORGANIZATION_CLIENT_WEBHOOK]: {
     post: {
-      summary: "Configure organization client logout webhook",
-      tags: [OPENAPI_TAGS.CLIENTS],
+      summary: "Configure organization client webhook",
+      tags: [OPENAPI_TAGS.WEBHOOKS],
       security: OPENAPI_SECURITY.AUTHENTICATED,
       parameters: [
         {
@@ -1013,8 +1013,8 @@ export const OPENAPI_PATH_DEFINITIONS = {
       },
     },
     delete: {
-      summary: "Disable organization client logout webhook",
-      tags: [OPENAPI_TAGS.CLIENTS],
+      summary: "Disable organization client webhook",
+      tags: [OPENAPI_TAGS.WEBHOOKS],
       security: OPENAPI_SECURITY.AUTHENTICATED,
       parameters: [
         {
@@ -1048,8 +1048,8 @@ export const OPENAPI_PATH_DEFINITIONS = {
   },
   [OPENAPI_PATHS.ORGANIZATION_CLIENT_WEBHOOK_SECRET_ROTATE]: {
     post: {
-      summary: "Rotate organization client logout webhook secret",
-      tags: [OPENAPI_TAGS.CLIENTS],
+      summary: "Rotate organization client webhook secret",
+      tags: [OPENAPI_TAGS.WEBHOOKS],
       security: OPENAPI_SECURITY.AUTHENTICATED,
       parameters: [
         {
@@ -1088,7 +1088,7 @@ export const OPENAPI_PATH_DEFINITIONS = {
   [OPENAPI_PATHS.ORGANIZATION_CLIENT_WEBHOOK_DELIVERIES]: {
     get: {
       summary: "List organization client webhook deliveries",
-      tags: [OPENAPI_TAGS.CLIENTS],
+      tags: [OPENAPI_TAGS.WEBHOOKS],
       security: OPENAPI_SECURITY.AUTHENTICATED,
       parameters: [
         {
@@ -1151,7 +1151,7 @@ export const OPENAPI_PATH_DEFINITIONS = {
   [OPENAPI_PATHS.ORGANIZATION_CLIENT_WEBHOOK_DELIVERY_BY_ID]: {
     get: {
       summary: "Get organization client webhook delivery details",
-      tags: [OPENAPI_TAGS.CLIENTS],
+      tags: [OPENAPI_TAGS.WEBHOOKS],
       security: OPENAPI_SECURITY.AUTHENTICATED,
       parameters: [
         {
@@ -1187,7 +1187,7 @@ export const OPENAPI_PATH_DEFINITIONS = {
   [OPENAPI_PATHS.ORGANIZATION_CLIENT_WEBHOOK_DELIVERY_REPLAY]: {
     post: {
       summary: "Replay a failed organization client webhook delivery",
-      tags: [OPENAPI_TAGS.CLIENTS],
+      tags: [OPENAPI_TAGS.WEBHOOKS],
       security: OPENAPI_SECURITY.AUTHENTICATED,
       parameters: [
         {
@@ -1224,7 +1224,7 @@ export const OPENAPI_PATH_DEFINITIONS = {
   [OPENAPI_PATHS.ORGANIZATION_CLIENT_WEBHOOK_STATUS]: {
     get: {
       summary: "Get organization client webhook delivery status",
-      tags: [OPENAPI_TAGS.CLIENTS],
+      tags: [OPENAPI_TAGS.WEBHOOKS],
       security: OPENAPI_SECURITY.AUTHENTICATED,
       parameters: [
         {
@@ -1254,7 +1254,7 @@ export const OPENAPI_PATH_DEFINITIONS = {
   [OPENAPI_PATHS.ORGANIZATION_CLIENT_WEBHOOK_TEST]: {
     post: {
       summary: "Send test webhook to organization client receiver",
-      tags: [OPENAPI_TAGS.CLIENTS],
+      tags: [OPENAPI_TAGS.WEBHOOKS],
       security: OPENAPI_SECURITY.AUTHENTICATED,
       parameters: [
         {
@@ -1295,7 +1295,7 @@ export const OPENAPI_PATH_DEFINITIONS = {
   [OPENAPI_PATHS.ORGANIZATION_CLIENT_WEBHOOK_VERIFY]: {
     post: {
       summary: "Verify organization client webhook receiver ownership",
-      tags: [OPENAPI_TAGS.CLIENTS],
+      tags: [OPENAPI_TAGS.WEBHOOKS],
       security: OPENAPI_SECURITY.AUTHENTICATED,
       parameters: [
         {

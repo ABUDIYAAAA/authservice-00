@@ -68,9 +68,6 @@ func main() {
 	}
 
 	r := gin.Default()
-	if cfg.AppEnv == "development" {
-		r.Use(middleware.DevStaticDeviceID("test-1"))
-	}
 	health.RegisterRoutes(r, pool)
 	auth.RegisterRoutes(r, authHandler, cfg, sessionsService, redisClient)
 	oauth.RegisterRoutes(r, oauthHandler, cfg, sessionsService)

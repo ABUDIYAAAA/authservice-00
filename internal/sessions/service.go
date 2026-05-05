@@ -28,6 +28,10 @@ func NewService(repo *Repository, cfg *config.Config) *Service {
 }
 
 func (s *Service) Create(ctx context.Context, userID uuid.UUID, deviceID string, ipAddress string, userAgent string) (*Session, string, error) {
+	if deviceID == "" {
+		return nil, "", errors.New("device id required")
+	}
+
 	if err := s.repo.RevokeActiveByUserDevice(ctx, userID, deviceID); err != nil {
 		return nil, "", err
 	}
@@ -67,13 +71,20 @@ func (s *Service) Create(ctx context.Context, userID uuid.UUID, deviceID string,
 }
 
 func (s *Service) Validate(ctx context.Context, token string, deviceID string) (*Session, error) {
+	if deviceID == "" {
+		return nil, ErrSessionInvalid
+	}
+
 	hash := security.HashToken(token)
 	session, err := s.repo.FindByTokenHash(ctx, hash)
 	if err != nil {
 		return nil, ErrSessionInvalid
 	}
 
-	if session.DeviceID != deviceID || !session.IsActive || session.RevokedAt != nil {
+	if !session.IsActive || session.RevokedAt != nil {
+		return nil, ErrSessionInvalid
+	}
+	if session.DeviceID != deviceID {
 		return nil, ErrSessionInvalid
 	}
 

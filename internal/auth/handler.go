@@ -56,7 +56,6 @@ func (h *Handler) Signup(c *gin.Context) {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        X-Device-ID header string true "Device Identifier"
 // @Param        request body LoginRequest true "Login request payload"
 // @Success      200  {object}  httpx.Response{data=AuthResponse}
 // @Failure      401  {object}  httpx.Response{error=httpx.ErrorResponse}
@@ -68,10 +67,11 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	deviceID := c.GetHeader("X-Device-ID")
-	if deviceID == "" {
-		httpx.RespondError(c, http.StatusBadRequest, "device_id_missing", "X-Device-ID header required", nil)
-		return
+	deviceID := ""
+	if cookieValue, err := c.Cookie(h.cfg.SessionCookieName); err == nil && cookieValue != "" {
+		if _, existingDeviceID, ok := sessions.DecodeCookieValue(cookieValue); ok {
+			deviceID = existingDeviceID
+		}
 	}
 
 	result, err := h.service.Login(c.Request.Context(), req, deviceID, c.ClientIP(), c.GetHeader("User-Agent"))
@@ -80,8 +80,8 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	if result.SessionToken != "" {
-		SetSessionCookie(c, h.cfg, result.SessionToken, result.SessionExpiry)
+	if result.SessionToken != "" && result.DeviceID != "" {
+		SetSessionCookie(c, h.cfg, result.SessionToken, result.DeviceID, result.SessionExpiry)
 	}
 
 	httpx.Respond(c, http.StatusOK, AuthResponse{
@@ -116,7 +116,7 @@ func (h *Handler) VerifyMFA(c *gin.Context) {
 	}
 
 	if result.SessionToken != "" {
-		SetSessionCookie(c, h.cfg, result.SessionToken, result.SessionExpiry)
+		SetSessionCookie(c, h.cfg, result.SessionToken, result.DeviceID, result.SessionExpiry)
 	}
 
 	httpx.Respond(c, http.StatusOK, AuthResponse{
@@ -142,26 +142,24 @@ func (h *Handler) TriggerMFA(c *gin.Context) {
 	httpx.Respond(c, http.StatusOK, gin.H{"triggered": true})
 }
 
-
 // Refresh rotates the session token
 // @Summary      Refresh session
 // @Description  Rotate the session token using a valid session cookie
 // @Tags         auth
 // @Produce      json
-// @Param        X-Device-ID header string true "Device Identifier"
 // @Success      200  {object}  httpx.Response{data=AuthResponse}
 // @Failure      401  {object}  httpx.Response{error=httpx.ErrorResponse}
 // @Router       /auth/refresh [post]
 func (h *Handler) Refresh(c *gin.Context) {
-	deviceID := c.GetHeader("X-Device-ID")
-	if deviceID == "" {
-		httpx.RespondError(c, http.StatusBadRequest, "device_id_missing", "X-Device-ID header required", nil)
+	cookieValue, err := c.Cookie(h.cfg.SessionCookieName)
+	if err != nil || cookieValue == "" {
+		httpx.RespondError(c, http.StatusUnauthorized, "session_missing", "session cookie required", nil)
 		return
 	}
 
-	token, err := c.Cookie(h.cfg.SessionCookieName)
-	if err != nil || token == "" {
-		httpx.RespondError(c, http.StatusUnauthorized, "session_missing", "session cookie required", nil)
+	token, deviceID, ok := sessions.DecodeCookieValue(cookieValue)
+	if !ok {
+		httpx.RespondError(c, http.StatusUnauthorized, "session_invalid", "invalid session", nil)
 		return
 	}
 
@@ -171,7 +169,9 @@ func (h *Handler) Refresh(c *gin.Context) {
 		return
 	}
 
-	SetSessionCookie(c, h.cfg, result.SessionToken, result.SessionExpiry)
+	if result.SessionToken != "" {
+		SetSessionCookie(c, h.cfg, result.SessionToken, deviceID, result.SessionExpiry)
+	}
 	httpx.Respond(c, http.StatusOK, AuthResponse{User: mapUser(result.User)})
 }
 
@@ -183,9 +183,11 @@ func (h *Handler) Refresh(c *gin.Context) {
 // @Success      200  {object}  httpx.Response{data=map[string]bool}
 // @Router       /auth/logout [post]
 func (h *Handler) Logout(c *gin.Context) {
-	token, err := c.Cookie(h.cfg.SessionCookieName)
-	if err == nil && token != "" {
-		_ = h.service.Logout(c.Request.Context(), token)
+	cookieValue, err := c.Cookie(h.cfg.SessionCookieName)
+	if err == nil && cookieValue != "" {
+		if token, _, ok := sessions.DecodeCookieValue(cookieValue); ok {
+			_ = h.service.Logout(c.Request.Context(), token)
+		}
 	}
 	ClearSessionCookie(c, h.cfg)
 	httpx.Respond(c, http.StatusOK, gin.H{"logged_out": true})

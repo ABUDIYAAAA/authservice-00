@@ -282,11 +282,6 @@ paths:
       description: Authenticate user with email and password and return session token
         or MFA challenge
       parameters:
-      - description: Device Identifier
-        in: header
-        name: X-Device-ID
-        required: true
-        type: string
       - description: Login request payload
         in: body
         name: request
@@ -546,12 +541,6 @@ paths:
   /auth/refresh:
     post:
       description: Rotate the session token using a valid session cookie
-      parameters:
-      - description: Device Identifier
-        in: header
-        name: X-Device-ID
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -817,15 +806,46 @@ paths:
       summary: Verify TOTP
       tags:
       - mfa
+  /oauth/github/callback:
+    get:
+      description: Complete GitHub OAuth login or link flow
+      parameters:
+      - description: OAuth authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: OAuth state
+        in: query
+        name: state
+        required: true
+        type: string
+      - description: Redirect response to frontend
+        in: query
+        name: redirect
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: GitHub OAuth callback
+      tags:
+      - oauth
   /oauth/github/link:
     get:
       description: Link GitHub account to the currently authenticated user
-      parameters:
-      - description: Device Identifier
-        in: header
-        name: X-Device-ID
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -846,12 +866,6 @@ paths:
   /oauth/github/start:
     get:
       description: Get the GitHub OAuth authorization URL
-      parameters:
-      - description: Device Identifier
-        in: header
-        name: X-Device-ID
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -869,15 +883,46 @@ paths:
       summary: Start GitHub OAuth
       tags:
       - oauth
+  /oauth/google/callback:
+    get:
+      description: Complete Google OAuth login or link flow
+      parameters:
+      - description: OAuth authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: OAuth state
+        in: query
+        name: state
+        required: true
+        type: string
+      - description: Redirect response to frontend
+        in: query
+        name: redirect
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Response'
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Google OAuth callback
+      tags:
+      - oauth
   /oauth/google/link:
     get:
       description: Link Google account to the currently authenticated user
-      parameters:
-      - description: Device Identifier
-        in: header
-        name: X-Device-ID
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -898,12 +943,6 @@ paths:
   /oauth/google/start:
     get:
       description: Get the Google OAuth authorization URL
-      parameters:
-      - description: Device Identifier
-        in: header
-        name: X-Device-ID
-        required: true
-        type: string
       produces:
       - application/json
       responses:

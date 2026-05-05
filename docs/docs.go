@@ -196,13 +196,6 @@ const docTemplate = `{
                 "summary": "Login user",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Device Identifier",
-                        "name": "X-Device-ID",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
                         "description": "Login request payload",
                         "name": "request",
                         "in": "body",
@@ -661,15 +654,6 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Refresh session",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device Identifier",
-                        "name": "X-Device-ID",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1130,6 +1114,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/oauth/github/callback": {
+            "get": {
+                "description": "Complete GitHub OAuth login or link flow",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oauth"
+                ],
+                "summary": "GitHub OAuth callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OAuth authorization code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OAuth state",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Redirect response to frontend",
+                        "name": "redirect",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/oauth/github/link": {
             "get": {
                 "description": "Link GitHub account to the currently authenticated user",
@@ -1140,15 +1184,6 @@ const docTemplate = `{
                     "oauth"
                 ],
                 "summary": "Link GitHub",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device Identifier",
-                        "name": "X-Device-ID",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1184,15 +1219,6 @@ const docTemplate = `{
                     "oauth"
                 ],
                 "summary": "Start GitHub OAuth",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device Identifier",
-                        "name": "X-Device-ID",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1218,6 +1244,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/oauth/google/callback": {
+            "get": {
+                "description": "Complete Google OAuth login or link flow",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oauth"
+                ],
+                "summary": "Google OAuth callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OAuth authorization code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OAuth state",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Redirect response to frontend",
+                        "name": "redirect",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/oauth/google/link": {
             "get": {
                 "description": "Link Google account to the currently authenticated user",
@@ -1228,15 +1314,6 @@ const docTemplate = `{
                     "oauth"
                 ],
                 "summary": "Link Google",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device Identifier",
-                        "name": "X-Device-ID",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1272,15 +1349,6 @@ const docTemplate = `{
                     "oauth"
                 ],
                 "summary": "Start Google OAuth",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Device Identifier",
-                        "name": "X-Device-ID",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",

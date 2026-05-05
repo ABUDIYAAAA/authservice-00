@@ -37,14 +37,14 @@ var (
 )
 
 type Service struct {
-	cfg        *config.Config
-	usersRepo  *users.Repository
-	sessions   *sessions.Service
-	mfaRepo    *mfa.Repository
-	tokensRepo *tokens.Repository
+	cfg         *config.Config
+	usersRepo   *users.Repository
+	sessions    *sessions.Service
+	mfaRepo     *mfa.Repository
+	tokensRepo  *tokens.Repository
 	oauthLister OAuthProviderLister
-	asynq      *asynq.Client
-	totpKey    []byte
+	asynq       *asynq.Client
+	totpKey     []byte
 }
 
 type OAuthProviderLister interface {
@@ -64,6 +64,7 @@ type LoginResult struct {
 	MFAMethods    []string
 	SessionToken  string
 	SessionExpiry time.Time
+	DeviceID      string
 }
 
 func NewService(cfg *config.Config, usersRepo *users.Repository, sessionsService *sessions.Service, mfaRepo *mfa.Repository, tokensRepo *tokens.Repository, oauthLister OAuthProviderLister, asynqClient *asynq.Client) (*Service, error) {
@@ -77,14 +78,14 @@ func NewService(cfg *config.Config, usersRepo *users.Repository, sessionsService
 	}
 
 	return &Service{
-		cfg:        cfg,
-		usersRepo:  usersRepo,
-		sessions:   sessionsService,
-		mfaRepo:    mfaRepo,
-		tokensRepo: tokensRepo,
+		cfg:         cfg,
+		usersRepo:   usersRepo,
+		sessions:    sessionsService,
+		mfaRepo:     mfaRepo,
+		tokensRepo:  tokensRepo,
 		oauthLister: oauthLister,
-		asynq:      asynqClient,
-		totpKey:    key,
+		asynq:       asynqClient,
+		totpKey:     key,
 	}, nil
 }
 
@@ -170,6 +171,11 @@ func (s *Service) Login(ctx context.Context, req LoginRequest, deviceID string, 
 }
 
 func (s *Service) CompleteLogin(ctx context.Context, user *users.User, deviceID string, ipAddress string, userAgent string) (*LoginResult, error) {
+	deviceID, err := s.ensureDeviceID(deviceID)
+	if err != nil {
+		return nil, err
+	}
+
 	if !user.EmailVerified {
 		return nil, ErrEmailNotVerified
 	}
@@ -189,6 +195,7 @@ func (s *Service) CompleteLogin(ctx context.Context, user *users.User, deviceID 
 			User:          user,
 			SessionToken:  token,
 			SessionExpiry: session.ExpiresAt,
+			DeviceID:      deviceID,
 		}, nil
 	}
 
@@ -202,6 +209,7 @@ func (s *Service) CompleteLogin(ctx context.Context, user *users.User, deviceID 
 		MFARequired: true,
 		MFAToken:    challengeToken,
 		MFAMethods:  methods,
+		DeviceID:    deviceID,
 	}, nil
 }
 
@@ -268,6 +276,11 @@ func (s *Service) VerifyMFA(ctx context.Context, challengeToken string, factor s
 		consumedAt = &now
 	}
 
+	deviceID := ""
+	if challenge.DeviceID != nil {
+		deviceID = *challenge.DeviceID
+	}
+
 	if err := s.mfaRepo.UpdateChallenge(ctx, challenge.ID, updated, consumedAt); err != nil {
 		return nil, err
 	}
@@ -278,13 +291,13 @@ func (s *Service) VerifyMFA(ctx context.Context, challengeToken string, factor s
 			MFARequired: true,
 			MFAToken:    challengeToken,
 			MFAMethods:  remainingFactors(challenge.RequiredFactors, updated),
+			DeviceID:    deviceID,
 		}, nil
 	}
 
-	if challenge.DeviceID == nil {
+	if deviceID == "" {
 		return nil, ErrMFANotConfigured
 	}
-	deviceID := *challenge.DeviceID
 	var ipAddress string
 	var userAgent string
 	if challenge.IPAddress != nil {
@@ -303,6 +316,7 @@ func (s *Service) VerifyMFA(ctx context.Context, challengeToken string, factor s
 		User:          user,
 		SessionToken:  token,
 		SessionExpiry: session.ExpiresAt,
+		DeviceID:      deviceID,
 	}, nil
 }
 
@@ -361,7 +375,15 @@ func (s *Service) Refresh(ctx context.Context, token string, deviceID string) (*
 		User:          user,
 		SessionToken:  newToken,
 		SessionExpiry: time.Now().Add(s.cfg.SessionRefreshTTL),
+		DeviceID:      deviceID,
 	}, nil
+}
+
+func (s *Service) ensureDeviceID(deviceID string) (string, error) {
+	if deviceID != "" {
+		return deviceID, nil
+	}
+	return security.GenerateToken(16)
 }
 
 func (s *Service) Logout(ctx context.Context, token string) error {

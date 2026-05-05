@@ -6,14 +6,15 @@ import (
 	"time"
 
 	"kael/internal/config"
+	"kael/internal/sessions"
 
 	"github.com/gin-gonic/gin"
 )
 
-func SetSessionCookie(c *gin.Context, cfg *config.Config, token string, expiresAt time.Time) {
+func SetSessionCookie(c *gin.Context, cfg *config.Config, token string, deviceID string, expiresAt time.Time) {
 	cookie := &http.Cookie{
 		Name:     cfg.SessionCookieName,
-		Value:    token,
+		Value:    sessions.EncodeCookieValue(token, deviceID),
 		Path:     "/",
 		Domain:   cfg.SessionCookieDomain,
 		HttpOnly: true,

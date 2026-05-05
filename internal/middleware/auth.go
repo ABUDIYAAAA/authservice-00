@@ -13,16 +13,16 @@ import (
 
 func RequireSession(cfg *config.Config, service *sessions.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		deviceID := c.GetHeader("X-Device-ID")
-		if deviceID == "" {
-			httpx.RespondError(c, http.StatusBadRequest, "device_id_missing", "X-Device-ID header required", nil)
+		cookieValue, err := c.Cookie(cfg.SessionCookieName)
+		if err != nil || cookieValue == "" {
+			httpx.RespondError(c, http.StatusUnauthorized, "session_missing", "session cookie required", nil)
 			c.Abort()
 			return
 		}
 
-		token, err := c.Cookie(cfg.SessionCookieName)
-		if err != nil || token == "" {
-			httpx.RespondError(c, http.StatusUnauthorized, "session_missing", "session cookie required", nil)
+		token, deviceID, ok := sessions.DecodeCookieValue(cookieValue)
+		if !ok {
+			httpx.RespondError(c, http.StatusUnauthorized, "session_invalid", "invalid session", nil)
 			c.Abort()
 			return
 		}

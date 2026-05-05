@@ -44,6 +44,13 @@ type Service struct {
 	client    *http.Client
 }
 
+type CallbackResult struct {
+	User      *users.User
+	Mode      string
+	IPAddress string
+	UserAgent string
+}
+
 func NewService(cfg *config.Config, repo *Repository, usersRepo *users.Repository, redisClient *redis.Client) *Service {
 	return &Service{
 		cfg:       cfg,
@@ -54,7 +61,7 @@ func NewService(cfg *config.Config, repo *Repository, usersRepo *users.Repositor
 	}
 }
 
-func (s *Service) StartAuth(provider string, mode string, userID *uuid.UUID, deviceID string, ipAddress string, userAgent string) (string, error) {
+func (s *Service) StartAuth(provider string, mode string, userID *uuid.UUID, ipAddress string, userAgent string) (string, error) {
 	state, err := security.GenerateToken(16)
 	if err != nil {
 		return "", err
@@ -66,7 +73,6 @@ func (s *Service) StartAuth(provider string, mode string, userID *uuid.UUID, dev
 	payload := map[string]string{
 		"provider":   provider,
 		"mode":       mode,
-		"device_id":  deviceID,
 		"ip_address": ipAddress,
 		"user_agent": userAgent,
 	}
@@ -93,46 +99,63 @@ func (s *Service) StartAuth(provider string, mode string, userID *uuid.UUID, dev
 	return url, nil
 }
 
-func (s *Service) HandleCallback(ctx context.Context, provider string, code string, state string) (*users.User, bool, string, string, string, error) {
+func (s *Service) HandleCallback(ctx context.Context, provider string, code string, state string) (*CallbackResult, error) {
 	statePayload, err := s.consumeState(state)
 	if err != nil {
-		return nil, false, "", "", "", err
+		return nil, err
 	}
 
 	if statePayload["provider"] != provider {
-		return nil, false, "", "", "", ErrOAuthStateInvalid
+		return nil, ErrOAuthStateInvalid
 	}
 
 	config, err := s.oauthConfig(provider)
 	if err != nil {
-		return nil, false, "", "", "", err
+		return nil, err
 	}
 
 	token, err := config.Exchange(ctx, code)
 	if err != nil {
-		return nil, false, "", "", "", err
+		return nil, err
 	}
 
 	userInfo, err := s.fetchUserInfo(provider, token)
 	if err != nil {
-		return nil, false, "", "", "", err
+		return nil, err
 	}
 	if userInfo.Email == "" {
-		return nil, false, "", "", "", errors.New("oauth provider did not return email")
+		return nil, errors.New("oauth provider did not return email")
 	}
 
 	mode := statePayload["mode"]
 	if mode == ModeLink {
 		userID, err := uuid.Parse(statePayload["user_id"])
 		if err != nil {
-			return nil, false, "", "", "", err
+			return nil, err
 		}
-		user, linked, err := s.linkAccount(ctx, userID, userInfo)
-		return user, linked, statePayload["device_id"], statePayload["ip_address"], statePayload["user_agent"], err
+		user, _, err := s.linkAccount(ctx, userID, userInfo)
+		if err != nil {
+			return nil, err
+		}
+		return &CallbackResult{
+			User:      user,
+			Mode:      ModeLink,
+			IPAddress: statePayload["ip_address"],
+			UserAgent: statePayload["user_agent"],
+		}, nil
 	}
 
 	user, created, err := s.loginOrCreate(ctx, userInfo)
-	return user, created, statePayload["device_id"], statePayload["ip_address"], statePayload["user_agent"], err
+	if err != nil {
+		return nil, err
+	}
+	_ = created
+	return &CallbackResult{
+		User:      user,
+		Mode:      ModeLogin,
+		IPAddress: statePayload["ip_address"],
+		UserAgent: statePayload["user_agent"],
+	}, nil
 }
 
 func (s *Service) ListProvidersByUser(ctx context.Context, userID uuid.UUID) ([]string, error) {

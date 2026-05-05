@@ -29,7 +29,6 @@ func NewHandler(svc *Service, authService *auth.Service, cfg *config.Config) *Ha
 // @Description  Get the Google OAuth authorization URL
 // @Tags         oauth
 // @Produce      json
-// @Param        X-Device-ID header string true "Device Identifier"
 // @Success      200  {object}  httpx.Response{data=map[string]string}
 // @Router       /oauth/google/start [get]
 func (h *Handler) StartGoogle(c *gin.Context) {
@@ -41,7 +40,6 @@ func (h *Handler) StartGoogle(c *gin.Context) {
 // @Description  Get the GitHub OAuth authorization URL
 // @Tags         oauth
 // @Produce      json
-// @Param        X-Device-ID header string true "Device Identifier"
 // @Success      200  {object}  httpx.Response{data=map[string]string}
 // @Router       /oauth/github/start [get]
 func (h *Handler) StartGitHub(c *gin.Context) {
@@ -53,7 +51,6 @@ func (h *Handler) StartGitHub(c *gin.Context) {
 // @Description  Link Google account to the currently authenticated user
 // @Tags         oauth
 // @Produce      json
-// @Param        X-Device-ID header string true "Device Identifier"
 // @Success      200  {object}  httpx.Response{data=map[string]string}
 // @Router       /oauth/google/link [get]
 func (h *Handler) LinkGoogle(c *gin.Context) {
@@ -65,17 +62,38 @@ func (h *Handler) LinkGoogle(c *gin.Context) {
 // @Description  Link GitHub account to the currently authenticated user
 // @Tags         oauth
 // @Produce      json
-// @Param        X-Device-ID header string true "Device Identifier"
 // @Success      200  {object}  httpx.Response{data=map[string]string}
 // @Router       /oauth/github/link [get]
 func (h *Handler) LinkGitHub(c *gin.Context) {
 	h.startLink(c, "github")
 }
 
+// CallbackGoogle completes the Google OAuth callback.
+// @Summary      Google OAuth callback
+// @Description  Complete Google OAuth login or link flow
+// @Tags         oauth
+// @Produce      json
+// @Param        code query string true "OAuth authorization code"
+// @Param        state query string true "OAuth state"
+// @Param        redirect query bool false "Redirect response to frontend"
+// @Success      200  {object}  httpx.Response
+// @Failure      400  {object}  httpx.Response{error=httpx.ErrorResponse}
+// @Router       /oauth/google/callback [get]
 func (h *Handler) CallbackGoogle(c *gin.Context) {
 	h.callback(c, "google")
 }
 
+// CallbackGitHub completes the GitHub OAuth callback.
+// @Summary      GitHub OAuth callback
+// @Description  Complete GitHub OAuth login or link flow
+// @Tags         oauth
+// @Produce      json
+// @Param        code query string true "OAuth authorization code"
+// @Param        state query string true "OAuth state"
+// @Param        redirect query bool false "Redirect response to frontend"
+// @Success      200  {object}  httpx.Response
+// @Failure      400  {object}  httpx.Response{error=httpx.ErrorResponse}
+// @Router       /oauth/github/callback [get]
 func (h *Handler) CallbackGitHub(c *gin.Context) {
 	h.callback(c, "github")
 }
@@ -96,16 +114,10 @@ func (h *Handler) startLink(c *gin.Context, provider string) {
 }
 
 func (h *Handler) start(c *gin.Context, provider string, mode string, userID *uuid.UUID) {
-	deviceID := c.GetHeader("X-Device-ID")
-	if deviceID == "" {
-		httpx.RespondError(c, http.StatusBadRequest, "device_id_missing", "X-Device-ID header required", nil)
-		return
-	}
-
 	ipAddress := c.ClientIP()
 	userAgent := c.GetHeader("User-Agent")
 
-	url, err := h.svc.StartAuth(provider, mode, userID, deviceID, ipAddress, userAgent)
+	url, err := h.svc.StartAuth(provider, mode, userID, ipAddress, userAgent)
 	if err != nil {
 		httpx.RespondError(c, http.StatusBadRequest, "oauth_start_failed", err.Error(), nil)
 		return
@@ -124,30 +136,38 @@ func (h *Handler) callback(c *gin.Context, provider string) {
 		return
 	}
 
-	user, _, deviceID, ipAddress, userAgent, err := h.svc.HandleCallback(c.Request.Context(), provider, code, state)
+	result, err := h.svc.HandleCallback(c.Request.Context(), provider, code, state)
 	if err != nil {
 		h.renderCallback(c, redirect, "oauth_failed", err.Error(), nil)
 		return
 	}
-	if deviceID == "" {
-		h.renderCallback(c, redirect, "device_id_missing", "device id missing", nil)
+	if result.Mode == ModeLink {
+		payload := gin.H{
+			"linked":   true,
+			"provider": provider,
+		}
+		if redirect {
+			h.renderCallback(c, redirect, "", "", payload)
+			return
+		}
+		httpx.Respond(c, http.StatusOK, payload)
 		return
 	}
 
-	result, err := h.auth.CompleteLogin(c.Request.Context(), user, deviceID, ipAddress, userAgent)
+	loginResult, err := h.auth.CompleteLogin(c.Request.Context(), result.User, "", result.IPAddress, result.UserAgent)
 	if err != nil {
 		h.renderCallback(c, redirect, "login_failed", err.Error(), nil)
 		return
 	}
 
-	if result.SessionToken != "" {
-		auth.SetSessionCookie(c, h.cfg, result.SessionToken, result.SessionExpiry)
+	if loginResult.SessionToken != "" && loginResult.DeviceID != "" {
+		auth.SetSessionCookie(c, h.cfg, loginResult.SessionToken, loginResult.DeviceID, loginResult.SessionExpiry)
 	}
 
 	payload := gin.H{
-		"mfa_required": result.MFARequired,
-		"mfa_token":    result.MFAToken,
-		"mfa_methods":  result.MFAMethods,
+		"mfa_required": loginResult.MFARequired,
+		"mfa_token":    loginResult.MFAToken,
+		"mfa_methods":  loginResult.MFAMethods,
 	}
 
 	if redirect {
@@ -177,11 +197,17 @@ func (h *Handler) renderCallback(c *gin.Context, redirect bool, errCode string, 
 	} else {
 		query.Set("status", "ok")
 		if data != nil {
+			if v, ok := data["linked"].(bool); ok && v {
+				query.Set("linked", "true")
+			}
 			if v, ok := data["mfa_required"].(bool); ok && v {
 				query.Set("mfa_required", "true")
 			}
 			if v, ok := data["mfa_token"].(string); ok && v != "" {
 				query.Set("mfa_token", v)
+			}
+			if methods, ok := data["mfa_methods"].([]string); ok && len(methods) > 0 {
+				query.Set("mfa_methods", strings.Join(methods, ","))
 			}
 		}
 	}

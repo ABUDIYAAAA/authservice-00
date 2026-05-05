@@ -1,5 +1,125 @@
 basePath: /
 definitions:
+  auth.AuthResponse:
+    properties:
+      mfa_methods:
+        items:
+          type: string
+        type: array
+      mfa_required:
+        type: boolean
+      mfa_token:
+        type: string
+      user:
+        $ref: '#/definitions/auth.UserResponse'
+    type: object
+  auth.EmailResendRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  auth.EmailUpdateRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  auth.EmailVerifyRequest:
+    properties:
+      token:
+        type: string
+    required:
+    - token
+    type: object
+  auth.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  auth.MFAVerifyRequest:
+    properties:
+      challenge_token:
+        type: string
+      code:
+        type: string
+      factor:
+        type: string
+    required:
+    - challenge_token
+    - code
+    - factor
+    type: object
+  auth.PasswordChangeRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  auth.PasswordForgotRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  auth.PasswordResetRequest:
+    properties:
+      new_password:
+        minLength: 8
+        type: string
+      token:
+        type: string
+    required:
+    - new_password
+    - token
+    type: object
+  auth.PasswordSetRequest:
+    properties:
+      password:
+        minLength: 8
+        type: string
+    required:
+    - password
+    type: object
+  auth.SignupRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  auth.UserResponse:
+    properties:
+      avatar_url:
+        type: string
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   health.DBCheckResponse:
     properties:
       error:
@@ -15,15 +135,480 @@ definitions:
         example: ok
         type: string
     type: object
+  httpx.ErrorResponse:
+    properties:
+      code:
+        type: string
+      details: {}
+      message:
+        type: string
+    type: object
+  httpx.Response:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/httpx.ErrorResponse'
+      success:
+        type: boolean
+    type: object
+  mfa.TOTPVerifyRequest:
+    properties:
+      code:
+        type: string
+    required:
+    - code
+    type: object
 info:
   contact: {}
   description: Auth API for devclub services.
   title: Kael API
   version: "1.0"
 paths:
+  /auth/email/resend:
+    post:
+      consumes:
+      - application/json
+      description: Resend the email verification link to the user
+      parameters:
+      - description: Email resend payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.EmailResendRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+      summary: Resend verification email
+      tags:
+      - auth
+  /auth/email/update:
+    post:
+      consumes:
+      - application/json
+      description: Update user email address and send new verification link
+      parameters:
+      - description: Email update payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.EmailUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Update email
+      tags:
+      - auth
+  /auth/email/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify email using the token from the verification email
+      parameters:
+      - description: Email verify payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.EmailVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+      summary: Verify email
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password and return session token
+        or MFA challenge
+      parameters:
+      - description: Device Identifier
+        in: header
+        name: X-Device-ID
+        required: true
+        type: string
+      - description: Login request payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.AuthResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Login user
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Revoke the current session token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+      summary: Logout
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: Get the profile of the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.UserResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Get current user
+      tags:
+      - auth
+  /auth/mfa/verify:
+    post:
+      consumes:
+      - application/json
+      description: Complete login by verifying an MFA factor (OTP/TOTP)
+      parameters:
+      - description: MFA verification payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.MFAVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Verify MFA
+      tags:
+      - auth
+  /auth/password/change:
+    post:
+      consumes:
+      - application/json
+      description: Change password for an authenticated user
+      parameters:
+      - description: Change password payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.PasswordChangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Change password
+      tags:
+      - auth
+  /auth/password/forgot:
+    post:
+      consumes:
+      - application/json
+      description: Send a password reset email to the user
+      parameters:
+      - description: Forgot password payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.PasswordForgotRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+      summary: Forgot password
+      tags:
+      - auth
+  /auth/password/reset:
+    post:
+      consumes:
+      - application/json
+      description: Reset password using the token from the reset email
+      parameters:
+      - description: Reset password payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.PasswordResetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Reset password
+      tags:
+      - auth
+  /auth/password/set:
+    post:
+      consumes:
+      - application/json
+      description: Set password for a user who doesn't have one (e.g. OAuth only)
+      parameters:
+      - description: Set password payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.PasswordSetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Set password
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      description: Rotate the session token using a valid session cookie
+      parameters:
+      - description: Device Identifier
+        in: header
+        name: X-Device-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.AuthResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Refresh session
+      tags:
+      - auth
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with email and password
+      parameters:
+      - description: Signup request payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.SignupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/auth.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+        "409":
+          description: Conflict
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Register a new user
+      tags:
+      - auth
   /db-check:
     get:
-      description: Pings the database and returns connectivity status
+      description: Check if the database is reachable
       produces:
       - application/json
       responses:
@@ -31,16 +616,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/health.DBCheckResponse'
-        "500":
-          description: Internal Server Error
+        "503":
+          description: Service Unavailable
           schema:
             $ref: '#/definitions/health.DBCheckResponse'
-      summary: Database connectivity check
+      summary: Database Health
       tags:
       - health
   /health:
     get:
-      description: Returns API health status
+      description: Check if the service is running
       produces:
       - application/json
       responses:
@@ -48,7 +633,315 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/health.HealthResponse'
-      summary: Health check
+      summary: Service Health
       tags:
       - health
+  /mfa/email/disable:
+    post:
+      description: Disable Email MFA for the user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+      summary: Disable Email MFA
+      tags:
+      - mfa
+  /mfa/email/enable:
+    post:
+      description: Enable Email MFA for the user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+      summary: Enable Email MFA
+      tags:
+      - mfa
+  /mfa/totp/disable:
+    post:
+      description: Disable TOTP MFA for the user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+      summary: Disable TOTP
+      tags:
+      - mfa
+  /mfa/totp/enable:
+    post:
+      description: Generate a new TOTP secret and return the secret and otpauth URL
+        for QR code
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Enable TOTP
+      tags:
+      - mfa
+  /mfa/totp/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify the first TOTP code to enable TOTP MFA for the user
+      parameters:
+      - description: TOTP verification payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/mfa.TOTPVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: boolean
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Verify TOTP
+      tags:
+      - mfa
+  /oauth/github/link:
+    get:
+      description: Link GitHub account to the currently authenticated user
+      parameters:
+      - description: Device Identifier
+        in: header
+        name: X-Device-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      summary: Link GitHub
+      tags:
+      - oauth
+  /oauth/github/start:
+    get:
+      description: Get the GitHub OAuth authorization URL
+      parameters:
+      - description: Device Identifier
+        in: header
+        name: X-Device-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      summary: Start GitHub OAuth
+      tags:
+      - oauth
+  /oauth/google/link:
+    get:
+      description: Link Google account to the currently authenticated user
+      parameters:
+      - description: Device Identifier
+        in: header
+        name: X-Device-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      summary: Link Google
+      tags:
+      - oauth
+  /oauth/google/start:
+    get:
+      description: Get the Google OAuth authorization URL
+      parameters:
+      - description: Device Identifier
+        in: header
+        name: X-Device-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      summary: Start Google OAuth
+      tags:
+      - oauth
+  /sessions:
+    get:
+      description: Get a list of all active sessions for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    items:
+                      additionalProperties: true
+                      type: object
+                    type: array
+                  type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: List sessions
+      tags:
+      - sessions
+  /sessions/{id}:
+    delete:
+      description: Revoke a specific session by its ID
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/httpx.ErrorResponse'
+              type: object
+      summary: Revoke session
+      tags:
+      - sessions
 swagger: "2.0"

@@ -19,27 +19,27 @@ func NewHandler(db *pgxpool.Pool) *Handler {
 	}
 }
 
-// Health godoc
-// @Summary Health check
-// @Description Returns API health status
-// @Tags health
-// @Produce json
-// @Success 200 {object} HealthResponse
-// @Router /health [get]
+// Health returns the service health status
+// @Summary      Service Health
+// @Description  Check if the service is running
+// @Tags         health
+// @Produce      json
+// @Success      200  {object}  HealthResponse
+// @Router       /health [get]
 func (h *Handler) Health(c *gin.Context) {
 	c.JSON(http.StatusOK, HealthResponse{
 		Status: "ok",
 	})
 }
 
-// DBCheck godoc
-// @Summary Database connectivity check
-// @Description Pings the database and returns connectivity status
-// @Tags health
-// @Produce json
-// @Success 200 {object} DBCheckResponse
-// @Failure 500 {object} DBCheckResponse
-// @Router /db-check [get]
+// DBCheck returns the database health status
+// @Summary      Database Health
+// @Description  Check if the database is reachable
+// @Tags         health
+// @Produce      json
+// @Success      200  {object}  DBCheckResponse
+// @Failure      503  {object}  DBCheckResponse
+// @Router       /db-check [get]
 func (h *Handler) DBCheck(c *gin.Context) {
 	if err := h.db.Ping(c.Request.Context()); err != nil {
 		c.JSON(http.StatusInternalServerError, DBCheckResponse{

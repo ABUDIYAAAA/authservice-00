@@ -1,10 +1,19 @@
 package main
 
 import (
+	"log"
+
+	"kael/internal/auth"
 	"kael/internal/config"
 	"kael/internal/database"
 	"kael/internal/health"
-	"log"
+	"kael/internal/mfa"
+	"kael/internal/middleware"
+	"kael/internal/oauth"
+	"kael/internal/ques"
+	"kael/internal/sessions"
+	"kael/internal/tokens"
+	"kael/internal/users"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,8 +34,48 @@ func main() {
 	}
 	defer pool.Close()
 
+	redisClient, err := database.ConnectRedis(cfg)
+	if err != nil {
+		log.Fatal("Unable to connect to redis:", err)
+	}
+	defer redisClient.Close()
+
+	asynqClient, err := ques.NewClient(cfg)
+	if err != nil {
+		log.Fatal("Unable to create asynq client:", err)
+	}
+	defer asynqClient.Close()
+
+	usersRepo := users.NewRepository(pool)
+	sessionsRepo := sessions.NewRepository(pool)
+	sessionsService := sessions.NewService(sessionsRepo, cfg)
+	mfaRepo := mfa.NewRepository(pool)
+	tokensRepo := tokens.NewRepository(pool)
+	oauthRepo := oauth.NewRepository(pool)
+
+	authService, err := auth.NewService(cfg, usersRepo, sessionsService, mfaRepo, tokensRepo, asynqClient)
+	if err != nil {
+		log.Fatal("Unable to initialize auth service:", err)
+	}
+	oauthService := oauth.NewService(cfg, oauthRepo, usersRepo, redisClient)
+
+	authHandler := auth.NewHandler(authService, cfg)
+	oauthHandler := oauth.NewHandler(oauthService, authService, cfg)
+	sessionsHandler := sessions.NewHandler(sessionsService)
+	mfaHandler, err := mfa.NewHandler(mfaRepo, usersRepo, cfg)
+	if err != nil {
+		log.Fatal("Unable to initialize mfa handler:", err)
+	}
+
 	r := gin.Default()
+	if cfg.AppEnv == "development" {
+		r.Use(middleware.DevStaticDeviceID("dev-device-id"))
+	}
 	health.RegisterRoutes(r, pool)
+	auth.RegisterRoutes(r, authHandler, cfg, sessionsService, redisClient)
+	oauth.RegisterRoutes(r, oauthHandler, cfg, sessionsService)
+	sessions.RegisterRoutes(r, sessionsHandler, middleware.RequireSession(cfg, sessionsService))
+	mfa.RegisterRoutes(r, mfaHandler, cfg, sessionsService)
 
 	log.Printf("Server starting on port %s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

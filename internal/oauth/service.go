@@ -47,6 +47,7 @@ type Service struct {
 type CallbackResult struct {
 	User      *users.User
 	Mode      string
+	DeviceID  string
 	IPAddress string
 	UserAgent string
 }
@@ -140,6 +141,7 @@ func (s *Service) HandleCallback(ctx context.Context, provider string, code stri
 		return &CallbackResult{
 			User:      user,
 			Mode:      ModeLink,
+			DeviceID:  statePayload["device_id"],
 			IPAddress: statePayload["ip_address"],
 			UserAgent: statePayload["user_agent"],
 		}, nil
@@ -153,6 +155,7 @@ func (s *Service) HandleCallback(ctx context.Context, provider string, code stri
 	return &CallbackResult{
 		User:      user,
 		Mode:      ModeLogin,
+		DeviceID:  statePayload["device_id"],
 		IPAddress: statePayload["ip_address"],
 		UserAgent: statePayload["user_agent"],
 	}, nil

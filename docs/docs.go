@@ -16,6 +16,26 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/.well-known/openid-configuration": {
+            "get": {
+                "description": "Return the OpenID Connect discovery document",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc"
+                ],
+                "summary": "OIDC Discovery",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/oidc.DiscoveryDocument"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/email/resend": {
             "post": {
                 "description": "Resend the email verification link to the user",
@@ -776,6 +796,537 @@ const docTemplate = `{
                 }
             }
         },
+        "/clients": {
+            "get": {
+                "description": "List all OAuth clients owned by the current user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "clients"
+                ],
+                "summary": "List clients",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/clients.ClientResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Register a new OAuth client application",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "clients"
+                ],
+                "summary": "Create client",
+                "parameters": [
+                    {
+                        "description": "Client creation payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/clients.CreateClientRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/clients.CreateClientResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/clients/{id}": {
+            "get": {
+                "description": "Get details of a specific OAuth client",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "clients"
+                ],
+                "summary": "Get client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/clients.ClientResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Permanently delete a client and all associated data",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "clients"
+                ],
+                "summary": "Delete client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Update name, avatar, or redirect URIs of a client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "clients"
+                ],
+                "summary": "Update client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/clients.UpdateClientRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/clients/{id}/members": {
+            "post": {
+                "description": "Add a user to a client by email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "clients"
+                ],
+                "summary": "Add member",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Member payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/clients.AddMemberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/clients.MemberProfile"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/clients/{id}/members/{userId}": {
+            "delete": {
+                "description": "Revoke a user's membership from a client",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "clients"
+                ],
+                "summary": "Remove member",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/clients/{id}/rotate-secret": {
+            "post": {
+                "description": "Generate a new client secret (old secret becomes invalid)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "clients"
+                ],
+                "summary": "Rotate client secret",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/clients.RotateSecretResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/clients/{id}/users": {
+            "get": {
+                "description": "List all users who are members of a client",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "clients"
+                ],
+                "summary": "List users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/clients.MemberProfile"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/db-check": {
             "get": {
                 "description": "Check if the database is reachable",
@@ -1374,6 +1925,316 @@ const docTemplate = `{
                 }
             }
         },
+        "/oidc/authorize": {
+            "get": {
+                "description": "Start the OIDC Authorization Code flow. Requires an active platform session.",
+                "tags": [
+                    "oidc"
+                ],
+                "summary": "OIDC Authorize",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "client_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Redirect URI",
+                        "name": "redirect_uri",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Response type (must be 'code')",
+                        "name": "response_type",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Requested scopes",
+                        "name": "scope",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "CSRF state parameter",
+                        "name": "state",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nonce for ID token",
+                        "name": "nonce",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "PKCE code challenge",
+                        "name": "code_challenge",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "PKCE method (S256)",
+                        "name": "code_challenge_method",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to login if no session"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/oidc/logout": {
+            "post": {
+                "description": "Revoke all tokens for the client associated with the access token",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc"
+                ],
+                "summary": "OIDC Logout",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/oidc/revoke": {
+            "post": {
+                "description": "Revoke an access or refresh token",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc"
+                ],
+                "summary": "Revoke Token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Token to revoke",
+                        "name": "token",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "boolean"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/oidc/token": {
+            "post": {
+                "description": "Exchange an authorization code for tokens, or refresh an access token using a refresh token",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc"
+                ],
+                "summary": "OIDC Token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Grant type (authorization_code or refresh_token)",
+                        "name": "grant_type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization code (required only for authorization_code grant)",
+                        "name": "code",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Redirect URI used in authorize (required only for authorization_code grant)",
+                        "name": "redirect_uri",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client ID",
+                        "name": "client_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Client secret (required for confidential clients)",
+                        "name": "client_secret",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "PKCE code verifier (required only when PKCE was used)",
+                        "name": "code_verifier",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Refresh token (required only for refresh_token grant)",
+                        "name": "refresh_token",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/oidc.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/oidc/userinfo": {
+            "get": {
+                "description": "Return user profile data based on access token",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oidc"
+                ],
+                "summary": "OIDC UserInfo",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/oidc.UserInfoResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "error": {
+                                            "$ref": "#/definitions/httpx.ErrorResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/sessions": {
             "get": {
                 "description": "Get a list of all active sessions for the authenticated user",
@@ -1706,6 +2567,136 @@ const docTemplate = `{
                 }
             }
         },
+        "clients.AddMemberRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "clients.ClientResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "client_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_public": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "redirect_uris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "clients.CreateClientRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "redirect_uris"
+            ],
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "is_public": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "redirect_uris": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "clients.CreateClientResponse": {
+            "type": "object",
+            "properties": {
+                "client": {
+                    "$ref": "#/definitions/clients.ClientResponse"
+                },
+                "client_secret": {
+                    "type": "string"
+                }
+            }
+        },
+        "clients.MemberProfile": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "joined_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "clients.RotateSecretResponse": {
+            "type": "object",
+            "properties": {
+                "client_secret": {
+                    "type": "string"
+                }
+            }
+        },
+        "clients.UpdateClientRequest": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "redirect_uris": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "health.DBCheckResponse": {
             "type": "object",
             "properties": {
@@ -1770,6 +2761,108 @@ const docTemplate = `{
             ],
             "properties": {
                 "code": {
+                    "type": "string"
+                }
+            }
+        },
+        "oidc.DiscoveryDocument": {
+            "type": "object",
+            "properties": {
+                "authorization_endpoint": {
+                    "type": "string"
+                },
+                "code_challenge_methods_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "grant_types_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id_token_signing_alg_values_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "response_types_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "revocation_endpoint": {
+                    "type": "string"
+                },
+                "scopes_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "subject_types_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "token_endpoint": {
+                    "type": "string"
+                },
+                "token_endpoint_auth_methods_supported": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "userinfo_endpoint": {
+                    "type": "string"
+                }
+            }
+        },
+        "oidc.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "id_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "oidc.UserInfoResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "email_verified": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "picture": {
+                    "type": "string"
+                },
+                "sub": {
                     "type": "string"
                 }
             }

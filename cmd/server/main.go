@@ -4,12 +4,14 @@ import (
 	"log"
 
 	"kael/internal/auth"
+	"kael/internal/clients"
 	"kael/internal/config"
 	"kael/internal/database"
 	"kael/internal/health"
 	"kael/internal/mfa"
 	"kael/internal/middleware"
 	"kael/internal/oauth"
+	"kael/internal/oidc"
 	"kael/internal/ques"
 	"kael/internal/sessions"
 	"kael/internal/tokens"
@@ -59,6 +61,17 @@ func main() {
 		log.Fatal("Unable to initialize auth service:", err)
 	}
 
+	clientsRepo := clients.NewRepository(pool)
+	clientsService := clients.NewService(clientsRepo, usersRepo)
+	clientsHandler := clients.NewHandler(clientsService)
+
+	oidcRepo := oidc.NewRepository(pool)
+	oidcService, err := oidc.NewService(cfg, oidcRepo, clientsRepo, usersRepo)
+	if err != nil {
+		log.Fatal("Unable to initialize OIDC service:", err)
+	}
+	oidcHandler := oidc.NewHandler(oidcService, cfg, sessionsService)
+
 	authHandler := auth.NewHandler(authService, cfg)
 	oauthHandler := oauth.NewHandler(oauthService, authService, cfg)
 	sessionsHandler := sessions.NewHandler(sessionsService)
@@ -73,6 +86,8 @@ func main() {
 	oauth.RegisterRoutes(r, oauthHandler, cfg, sessionsService)
 	sessions.RegisterRoutes(r, sessionsHandler, middleware.RequireSession(cfg, sessionsService))
 	mfa.RegisterRoutes(r, mfaHandler, cfg, sessionsService)
+	clients.RegisterRoutes(r, clientsHandler, middleware.RequireSession(cfg, sessionsService))
+	oidc.RegisterRoutes(r, oidcHandler)
 
 	log.Printf("Server starting on port %s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

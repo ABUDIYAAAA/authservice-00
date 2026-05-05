@@ -59,6 +59,12 @@ type Config struct {
 	LoginRateLimitPerMinute int
 	MfaRateLimitPerMinute   int
 	AsynqWorkerConcurrency  int
+
+	OIDCSigningKey      string
+	OIDCCodeTTL         time.Duration
+	OIDCAccessTokenTTL  time.Duration
+	OIDCRefreshTokenTTL time.Duration
+	OIDCIssuer          string
 }
 
 func Load() (*Config, error) {
@@ -116,6 +122,12 @@ func Load() (*Config, error) {
 		LoginRateLimitPerMinute: getInt("LOGIN_RATE_LIMIT_PER_MINUTE", 20),
 		MfaRateLimitPerMinute:   getInt("MFA_RATE_LIMIT_PER_MINUTE", 30),
 		AsynqWorkerConcurrency:  getInt("ASYNQ_WORKER_CONCURRENCY", 10),
+
+		OIDCSigningKey:      getString("OIDC_SIGNING_KEY", ""),
+		OIDCCodeTTL:         getDuration("OIDC_CODE_TTL", 5*time.Minute),
+		OIDCAccessTokenTTL:  getDuration("OIDC_ACCESS_TOKEN_TTL", time.Hour),
+		OIDCRefreshTokenTTL: getDuration("OIDC_REFRESH_TOKEN_TTL", 30*24*time.Hour),
+		OIDCIssuer:          getString("OIDC_ISSUER", ""),
 	}
 
 	return cfg, nil

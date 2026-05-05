@@ -154,13 +154,13 @@ func (h *Handler) callback(c *gin.Context, provider string) {
 		return
 	}
 
-	loginResult, err := h.auth.CompleteLogin(c.Request.Context(), result.User, "", result.IPAddress, result.UserAgent)
+	loginResult, err := h.auth.CompleteLogin(c.Request.Context(), result.User, result.DeviceID, result.IPAddress, result.UserAgent)
 	if err != nil {
 		h.renderCallback(c, redirect, "login_failed", err.Error(), nil)
 		return
 	}
 
-	if loginResult.SessionToken != "" && loginResult.DeviceID != "" {
+	if loginResult.SessionToken != "" {
 		auth.SetSessionCookie(c, h.cfg, loginResult.SessionToken, loginResult.DeviceID, loginResult.SessionExpiry)
 	}
 

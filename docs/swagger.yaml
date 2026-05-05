@@ -1,0 +1,54 @@
+basePath: /
+definitions:
+  health.DBCheckResponse:
+    properties:
+      error:
+        example: 'dial tcp 127.0.0.1:5432: connect: connection refused'
+        type: string
+      status:
+        example: db ok
+        type: string
+    type: object
+  health.HealthResponse:
+    properties:
+      status:
+        example: ok
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Auth API for devclub services.
+  title: Kael API
+  version: "1.0"
+paths:
+  /db-check:
+    get:
+      description: Pings the database and returns connectivity status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/health.DBCheckResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/health.DBCheckResponse'
+      summary: Database connectivity check
+      tags:
+      - health
+  /health:
+    get:
+      description: Returns API health status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/health.HealthResponse'
+      summary: Health check
+      tags:
+      - health
+swagger: "2.0"

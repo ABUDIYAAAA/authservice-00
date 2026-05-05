@@ -80,7 +80,7 @@ func main() {
 
 	r := gin.Default()
 	health.RegisterRoutes(r, pool)
-	auth.RegisterRoutes(r, authHandler, cfg, sessionsService, redisClient)
+	auth.RegisterRoutes(r, authHandler, cfg, sessionsService)
 	oauth.RegisterRoutes(r, oauthHandler, cfg, sessionsService)
 	sessions.RegisterRoutes(r, sessionsHandler, middleware.RequireSession(cfg, sessionsService))
 	mfa.RegisterRoutes(r, mfaHandler, cfg, sessionsService)

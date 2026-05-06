@@ -79,6 +79,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(middleware.CORS(cfg))
 	health.RegisterRoutes(r, pool)
 	auth.RegisterRoutes(r, authHandler, cfg, sessionsService)
 	oauth.RegisterRoutes(r, oauthHandler, cfg, sessionsService)
